@@ -3,13 +3,17 @@ package main
 import (
 	"net/http"
 	"time"
+	"github.com/gorilla"
+	"connect"
+	"config"
+	"common/logging"
 )
 func wsHandler(w http.ResponseWriter , r *http.Request){
 	//	w.Write([]byte("hello"))
 	var(
 		wsConn *websocket.Conn
 		err error
-		conn *impl.Connection
+		conn *connect.Connection
 		data []byte
 	)
 	// 完成ws协议的握手操作
@@ -49,6 +53,8 @@ ERR:
 
 
 func main() {
+	config.init.init_main()
+	logging.Debug("server start")
 	http.HandleFunc("/ws",wsHandler)
 	http.ListenAndServe("0.0.0.0:7777",nil)
 }
