@@ -8,6 +8,4 @@ func Init_main() {
 func init_configFile() {
 	logging.Debug("init main")
 }
-func init_configFile() {
 
-}
