@@ -2,12 +2,12 @@ package config
 
 import "common/logging"
 
-func Init_main ()  {
+func Init_main() {
 	init_configFile()
 }
 func init_configFile() {
 	logging.Debug("init main")
 }
-func init_configFile()  {
-	
+func init_configFile() {
+
 }

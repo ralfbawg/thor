@@ -1,10 +1,5 @@
 package task
 
-type task interface{
-
-
-init()(bool,string)
-
-
+type task interface {
+	init() (bool, string)
 }
-

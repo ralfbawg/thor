@@ -1,0 +1,8 @@
+common:
+  env: dev
+log:
+  filepath:
+wserver:
+  port: 8888
+api:
+  port: 800

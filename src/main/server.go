@@ -5,15 +5,17 @@ import (
 	"net/http"
 )
 
-func StartServers()  {
-	logging.Info("start servers")
+const ()
 
-	
+func StartServers() {
+	logging.Info("start servers")
+	startWsServer()
+
 }
-func startWsServer()  {
+func startWsServer() {
 	http.HandleFunc("/", wsHandler)
 	http.ListenAndServe("0.0.0.0:7777", nil)
 }
-func startApiServer()  {
-	
+func startApiServer() {
+
 }

@@ -23,7 +23,7 @@ func AdaptTask(conn websocket.Conn) (string, error) {
 	go adaptTask(&conn)
 }
 
-func adaptTask(conn *websocket.Conn)  (string, error)  {
+func adaptTask(conn *websocket.Conn) (string, error) {
 	var (
 		err error
 	)
@@ -38,4 +38,3 @@ func adaptTask(conn *websocket.Conn)  (string, error)  {
 ERR:
 	conn.Close()
 }
-

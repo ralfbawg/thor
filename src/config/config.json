@@ -1,0 +1,159 @@
+{
+  "common":{
+    ""
+  },
+
+  "log": {
+    "file": "D:\\Projects\\temp\\log\\business.log",
+    "level": "debug",
+    "name": "demo",
+    "suffix": "060102-15"
+  },
+  "prog": {
+    "cpu": 0,
+    "daemon": false,
+    "healthPort": "localhost:15057"
+  },
+  "server": {
+    "id": "WWW",
+    "redis": "tcp://10.51.235.159:6389/0?timeout=10s&maxidle=10",
+    "port": "0.0.0.0:29007",
+    "thriftClientTimeout": 5,
+    "kafkaBrokers": [
+      "10.51.235.159:9092"
+    ],
+    "upstreamTopicBroadcast": "packages-upstream-broadcast-v3",
+    "upstreamTopicDispatch": "packages-upstream-dispatch-v3",
+    "jsUrl": "D:\\Projects\\Repo\\git\\multi-gateways\\b2bgateway\\src\\conf\\doorlocker.js"
+  },
+  "msmart": {
+    "smartRDS": "mysql://msmart_das_001:j7Tw_TKc8@tcp(rm-bp1n8l70ad8b14huf.mysql.rds.aliyuncs.com:3306)/smart",
+    "packagesRDS": "mysql://packagetestadmin:PkNPutz7nzWiXZmknIGR@tcp(rm-bp1n8l70ad8b14huf.mysql.rds.aliyuncs.com:3306)/packages_v3",
+    "suiteRDS": "mysql://packagetestadmin:PkNPutz7nzWiXZmknIGR@tcp(rm-bp1n8l70ad8b14huf.mysql.rds.aliyuncs.com:3306)/suite_v3",
+    "b2bRDS": "mysql://packagetestadmin:PkNPutz7nzWiXZmknIGR@tcp(rm-bp1n8l70ad8b14huf.mysql.rds.aliyuncs.com:3306)/packages_v3",
+    "appId": "1000",
+    "thriftRpcTimeout": 5,
+    "baseAddr": "10.47.123.232:8090"
+  },
+  "apns": {
+    "kafkaBrokers": [
+      "10.51.235.159:9092"
+    ],
+    "pushType": "pro2base/msg/push",
+    "msgKey": "push.b2b.gateway.user",
+    "appId": 1023,
+    "appIdPad": 1110,
+    "appIdH5": 1007,
+    "expiration": 259200
+  },
+  "update": {
+    "rpcAddr": "10.24.17.234:9091",
+    "rpcTimeout": 10
+  },
+  "userInfo": {
+    "rpcaddr": "10.47.123.232:8290",
+    "rpcTimeout": 5,
+    "rpcTopic": "b2bgateway/user/all/list"
+  },
+  "sceneRpc": {
+    "rpcaddr": "10.47.123.232:8290",
+    "rpcTimeout": 10,
+    "rpcTopic": "suite/device/upstream"
+  },
+  "alarmPush": {
+    "rpcaddr": "10.47.123.232:8090",
+    "rpcTimeout": 5,
+    "rpcTopic": "v1/packages/b2bgateway_push"
+  },
+  "contrlRPC": {
+    "rpcAddr": "10.168.227.131:8390",
+    "rpcTimeout": 10,
+    "rpcTopic": "device/ctrl/check/go"
+  },
+  "kafkaReqTimeout": 25,
+  "lockPwdExpireTime": 600,
+  "ys": {
+    "openUrl": "https://open.ys7.com/api/method",
+    "appKey": "fecf30f4a8754e8bbe4fbcfab2011802",
+    "secretKey": "3b3d892c8663146924ee8c8b6767797a",
+    "protoVer": "1.0",
+    "timeout": 5,
+    "openCACert": "",
+    "myCACert": "",
+    "myKeyFile": "",
+    "lappDeviceVideoUrl": "https://open.ys7.com/api/lapp/device/video",
+    "lappDeviceCaptureUrl": "https://open.ys7.com/api/lapp/device/capture",
+    "lappLiveAddrLimitedUrl": "https://open.ys7.com/api/lapp/live/address/limited"
+  },
+  "domains": {
+    "names": [
+      "\u5ba2\u5385",
+      "\u5367\u5ba4",
+      "\u53a8\u623f",
+      "\u9633\u53f0",
+      "\u536b\u751f\u95f4"
+    ]
+  },
+  "scenes": {
+    "infos": [
+      {
+        "icon": "01",
+        "sName": "\u56de\u5bb6",
+        "sType": 2
+      },
+      {
+        "icon": "02",
+        "sName": "\u79bb\u5bb6",
+        "sType": 2
+      },
+      {
+        "icon": "03",
+        "sName": "\u8d77\u5e8a",
+        "sType": 2
+      },
+      {
+        "icon": "04",
+        "sName": "\u7761\u89c9",
+        "sType": 2
+      }
+    ]
+  },
+  "route": {
+    "redis": "tcp://10.51.235.159:6389/0?timeout=10s&maxidle=10",
+    "kafka": [
+      "10.51.235.159:9092"
+    ],
+    "adapterTopic": "mqtt-router-topic"
+  },
+  "oss": {
+    "endpoint": "oss-cn-shenzhen.aliyuncs.com",
+    "accessId": "kXYeOWCMveYdwpAs",
+    "accessKey": "P5eIG4bNOB7A164rrplhqCQfQVC0ig",
+    "bucket": "m-apps",
+    "portraitBucket": "midea-file"
+  },
+  "mongo": {
+    "url": "mongodb://10.168.227.131:27017/admin",
+    "schema": "test",
+    "poolSize": 100
+  },
+  "cronJob": {
+    "bucketExpression": "0 0 1 * * ?",
+    "expression": "0 0 2 * * ?",
+    "enable": false
+  },
+  "i18n": {
+    "zhHans": "D:\\Projects\\Repo\\git\\multi-gateways\\b2bgateway\\src\\conf\\zh-hans.yaml",
+    "enUs": "D:\\Projects\\Repo\\git\\multi-gateways\\b2bgateway\\src\\conf\\en-us.yaml",
+    "defaultLanguage": "zh-Hans"
+  },
+  "thingShadow":{
+    "url": "10.168.158.227:6565"
+  },
+  "archive":{
+    "expression" : "0 0 2 12 * ?",
+    "enable":true,
+    "runNow":true,
+    "duration": 150
+  }
+}

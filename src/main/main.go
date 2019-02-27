@@ -1,15 +1,13 @@
 package main
 
 import (
-	"net/http"
-	"github.com/gorilla"
-	"connect"
 	"common/logging"
 	"config"
+	"connect"
+	"github.com/gorilla"
 	"handler"
+	"net/http"
 )
-
-
 
 var (
 	upgrader = websocket.Upgrader{
