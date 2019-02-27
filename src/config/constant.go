@@ -1,6 +1,6 @@
 package config
 
-const(
-	appName="thor"
-	wsServerPort = "8888"
+const (
+	AppName      = "thor"
+	WsServerPort = 8888
 )
