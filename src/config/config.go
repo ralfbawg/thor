@@ -7,7 +7,18 @@ import (
 )
 
 type configure struct {
-	common struct{}
+	common struct{
+		env string
+	}
+	log struct{
+		filepath string
+	}
+	wserver struct{
+		port int
+	}
+	apiserver struct{
+		port int
+	}
 	db     struct {
 		url      string `json"url"`
 		username string `json"username"`

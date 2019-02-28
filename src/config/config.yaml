@@ -6,3 +6,8 @@ wserver:
   port: 8888
 api:
   port: 800
+db:
+  url:
+  username:
+  password:
+  dbtype:
