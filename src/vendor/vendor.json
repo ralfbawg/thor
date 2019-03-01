@@ -3,16 +3,16 @@
 	"ignore": "test",
 	"package": [
 		{
-//			"checksumSHA1": "BhMowD2DIKSd9qq8Pzh7Y3mh2/w=",
-			"path": "github.com/gorilla",
-//			"revision": "22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae",
-//			"revisionTime": "2017-01-09T09:34:21Z"
+			"checksumSHA1": "c//wUUHFTjUFshMO7TKJKD+1W+g=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "7c8e298727d149d7c329b4dec7e94e1932ac5c11",
+			"revisionTime": "2018-12-18T07:24:45Z"
 		},
 		{
-//			"checksumSHA1": "jfzaIhRB69YKvY1KgaUhL66omiQ=",
+			"checksumSHA1": "oNqPrS2edE8peI3ah2INe379k8E=",
 			"path": "gopkg.in/yaml.v2",
-//			"revision": "46662e700bd20289503475770dbf0384e43398eb",
-//			"revisionTime": "2017-12-20T01:32:39Z"
+			"revision": "51d6538a90f86fe93ac480b35f37b2be17fef232",
+			"revisionTime": "2018-11-15T11:05:04Z"
 		}
 	]
 }
