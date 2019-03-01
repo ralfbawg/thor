@@ -1,0 +1,18 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+//			"checksumSHA1": "BhMowD2DIKSd9qq8Pzh7Y3mh2/w=",
+			"path": "github.com/gorilla",
+//			"revision": "22d885f9ecc78bf4ee5d72b937e4bbcdc58e8cae",
+//			"revisionTime": "2017-01-09T09:34:21Z"
+		},
+		{
+//			"checksumSHA1": "jfzaIhRB69YKvY1KgaUhL66omiQ=",
+			"path": "gopkg.in/yaml.v2",
+//			"revision": "46662e700bd20289503475770dbf0384e43398eb",
+//			"revisionTime": "2017-12-20T01:32:39Z"
+		}
+	]
+}
