@@ -11,7 +11,7 @@ import (
 const ()
 
 
-func StartServers() {
+func StartServer() {
 	logging.Info("start servers")
 	startWsServer()
 

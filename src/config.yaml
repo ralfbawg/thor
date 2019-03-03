@@ -1,0 +1,13 @@
+common:
+  env: dev
+log:
+  filepath: d:/test
+server:
+  port: 8888
+  wspath: /ws
+  apipath: /api
+db:
+  url: jdbc://127.0.0.1:3306/test
+  username: test
+  password: test
+  dbtype: mysql
