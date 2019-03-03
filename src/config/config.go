@@ -7,28 +7,28 @@ import (
 )
 
 type configure struct {
-	common struct{
-		env string
+	Common struct{
+		Env string `yaml:"env"`
 	}
-	log struct{
-		filepath string
+	Log struct{
+		Filepath string `yaml:"filepath"`
 	}
-	wserver struct{
-		port int
+	server struct{
+		Port int `yaml:"port"`
+		WsServicePath string `yaml:"wspath"`
+		ApiServicePath string  `yaml:"apipath"`
 	}
-	apiserver struct{
-		port int
+	Db     struct {
+		Url      string `yaml:"url"`
+		Username string `yaml:"username"`
+		Password string `yaml:"password"`
+		Dbtype   string `yaml:"dbtype"`
 	}
-	db     struct {
-		url      string `json"url"`
-		username string `json"username"`
-		password string `json"password"`
-		dbtype   string `json"dbtype"`
-	} `json:"db"`
 }
 
 func (c *configure) getConfig() (*configure, error) {
-	yamlFile, err := ioutil.ReadFile("conf.yaml")
+	yamlFile, err := ioutil.ReadFile("config.yaml")
+	ioutil.ReadDir()
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -36,6 +36,5 @@ func (c *configure) getConfig() (*configure, error) {
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
-
 	return c, err
 }
