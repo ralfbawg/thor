@@ -11,3 +11,4 @@ db:
   username: test
   password: test
   dbtype: mysql
+
