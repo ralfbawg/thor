@@ -24,6 +24,24 @@ type configure struct {
 		Password string `yaml:"password"`
 		Dbtype   string `yaml:"dbtype"`
 	}
+	common struct{
+		env string
+	}`yaml:"common"`
+	log struct{
+		filepath string
+	}`yaml:"log"`
+	wserver struct{
+		port int
+	}`yaml:"wsserver"`
+	apiserver struct{
+		port int
+	}`yaml:"apiserver"`
+	db     struct {
+		url      string `yaml"url"`
+		username string `yaml"username"`
+		password string `yaml"password"`
+		dbtype   string `yaml"dbtype"`
+	} `yaml:"db"`
 }
 
 func (c *configure) getConfig() (*configure, error) {
@@ -36,5 +54,5 @@ func (c *configure) getConfig() (*configure, error) {
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
-	return c, err
+return c, err
 }
