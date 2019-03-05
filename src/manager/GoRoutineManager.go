@@ -1,6 +1,4 @@
-package main
-
-import "util/uuid"
+package manager
 
 type GoRoutineItem struct {
 	id int
@@ -15,14 +13,14 @@ const (
 var GoRoutineSlice = make([]GoRoutineItem, RoutineSliceDefaultLen, RoutineSliceDefaultCap)
 var GoRoutineMap = make(map[string]GoRoutineItem,RoutineSliceDefaultCap)
 
-func AddGoFunc(f func()) {
-	t := make(chan GoRoutineItem,1)
-	GoRoutineMap[uuid.Generate().String()] = GoRoutineItem{
-		id:1,
-	}
-	sliceLen := len(GoRoutineSlice)
-
-}
+//func AddGoFunc(f func()) {
+//	t := make(chan GoRoutineItem,1)
+//	GoRoutineMap[uuid.Generate().String()] = GoRoutineItem{
+//		id:1,
+//	}
+//	sliceLen := len(GoRoutineSlice)
+//
+//}
 
 func DeleteGoFunc()  {
 

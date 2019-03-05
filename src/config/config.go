@@ -6,29 +6,34 @@ import (
 	"log"
 )
 
-type configure struct {
-	Common struct{
+var ConfigStore = &Configure{}
+
+type Configure struct {
+	Common struct {
 		Env string `yaml:"env"`
 	}
-	Log struct{
+	Log struct {
 		Filepath string `yaml:"filepath"`
 	}
-	server struct{
-		Port int `yaml:"port"`
-		WsServicePath string `yaml:"wspath"`
-		ApiServicePath string  `yaml:"apipath"`
+	Server struct {
+		Port           string `yaml:"port"`
+		WsServicePath  string `yaml:"wspath"`
+		ApiServicePath string `yaml:"apipath"`
 	}
-	Db     struct {
+	Db struct {
 		Url      string `yaml:"url"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 		Dbtype   string `yaml:"dbtype"`
 	}
+	inited bool
 }
 
-func (c *configure) getConfig() (*configure, error) {
-	yamlFile, err := ioutil.ReadFile("config.yaml")
-	ioutil.ReadDir()
+func (c *Configure) GetConfig(reload bool) (*Configure, error) {
+	if !reload && ConfigStore.inited {
+		return ConfigStore, nil
+	}
+	yamlFile, err := ioutil.ReadFile("src/config.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -36,5 +41,6 @@ func (c *configure) getConfig() (*configure, error) {
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
+	c.inited = true
 	return c, err
 }

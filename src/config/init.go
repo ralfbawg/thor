@@ -2,21 +2,24 @@ package config
 
 import (
 	"common/logging"
-	"fmt"
+	"db"
 )
-
 func Init_main() {
-	init_configFile()
+	initConfigFile()
+	db.InitDb()
 }
-func init_configFile() {
-	logging.Debug("init main")
-	configure := &configure{}
-	if c,err := configure.getConfig();err!=nil{
-		return
+func initConfigFile() (*Configure,error) {
+	logging.Debug("init db start")
+	if c,err := ConfigStore.GetConfig(true);err==nil{
+		logging.Debug("db init success")
+		return c,nil
 	}else {
-		fmt.Printf(c.Db.Dbtype)
+		logging.Debug("db init fail")
+		return nil,err
 	}
 
-
+}
+func GetConfigFile() (*Configure,error) {
+	return ConfigStore,nil
 }
 
