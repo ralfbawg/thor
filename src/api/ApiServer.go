@@ -17,11 +17,7 @@ func (h *apiDispatch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello, world!"))
 }
 
-func startApiServer() {
-	http.HandleFunc("/api/", &apiDispatch{})
-	http.ListenAndServe(":80", nil)
-}
-func say(w http.ResponseWriter, req *http.Request) {
+func ApiDispatch(w http.ResponseWriter, req *http.Request) {
 	pathInfo := strings.Trim(req.URL.Path, "/")
 	fmt.Println("pathInfo:", pathInfo)
 

@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"net/http"
 	"filter"
+	"strings"
 )
 
 var (
@@ -19,6 +20,7 @@ var (
 func WsDispatcher(w http.ResponseWriter, r *http.Request)  {
 	logging.Debug("ws server start")
 	filter.DoFilter(w,r)
+
 
 //	var (
 //		wsConn *websocket.Conn
@@ -38,4 +40,12 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request)  {
 //	}
 //ERR:
 //	conn.Close()
+}
+func verifyAppInfo(r *http.Request) (string,bool){
+	path := strings.Split(r.RequestURI,"/")
+	appId :=path[2]
+	appKey:=path[3]
+	logging.Debug("app id is %s,app key is %s",appId,appKey)
+	//TODO 通过db查询确认
+	return appId,true
 }

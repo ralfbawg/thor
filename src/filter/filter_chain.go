@@ -1,35 +1,31 @@
 package filter
 
 import (
+	"common/logging"
 	"net/http"
-	"fmt"
+)
+
+const (
+	filterMax = 100
 )
 
 type filterI interface {
 	before()
-	do(w http.ResponseWriter,r *http.Request)
+	do(w http.ResponseWriter, r *http.Request)
 	after()
 }
 
-var filters = make([]filterI,0,10)
+var filters = make([]filterI, 0, filterMax)
 
-func FilterInit()  {
-	filters = append(filters,&AuthFilter{&BaseFilter{},})//TODO 未来需要换成配置方式加载
+func FilterInit() {
+	filters = append(filters, &AuthFilter{&BaseFilter{},}) //TODO 未来需要换成配置方式加载
 }
 
-
-type FilterChain struct {
-	w http.ResponseWriter
-	r *http.Request
-	filters []filterI
-}
-
-func DoFilter(w http.ResponseWriter,r *http.Request) {
-	for _,t := range filters{
-		fmt.Println("%d,%d",len(filters),cap(filters))
-		fmt.Printf("%p, %T\n", t, t)
+func DoFilter(w http.ResponseWriter, r *http.Request) {
+	for _, t := range filters { //TODO 根据服务与任务配置不同过滤器
+		logging.Debug("len=%d,cap=%d", len(filters), cap(filters))
 		t.before()
-		t.do(w,r)
+		t.do(w, r)
 		t.after()
 	}
 }
