@@ -3,10 +3,12 @@ package config
 import (
 	"common/logging"
 	"db"
+	"filter"
 )
 func Init_main() {
 	initConfigFile()
 	db.InitDb()
+	filter.FilterInit()
 }
 func initConfigFile() (*Configure,error) {
 	logging.Debug("init db start")

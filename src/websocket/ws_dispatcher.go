@@ -4,6 +4,7 @@ import (
 	"common/logging"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"filter"
 )
 
 var (
@@ -17,6 +18,8 @@ var (
 
 func WsDispatcher(w http.ResponseWriter, r *http.Request)  {
 	logging.Debug("ws server start")
+	filter.DoFilter(w,r)
+
 //	var (
 //		wsConn *websocket.Conn
 //		err    error

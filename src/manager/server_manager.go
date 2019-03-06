@@ -3,7 +3,6 @@ package manager
 import (
 	"common/logging"
 	"config"
-	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
@@ -18,7 +17,6 @@ type serverManager struct {
 }
 
 func StartServers() {
-	fmt.Printf("test")
 	go startHttpServer()
 	go startTcpServer()
 
