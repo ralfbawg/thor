@@ -18,7 +18,7 @@ type filterI interface {
 var filters = make([]filterI, 0, filterMax)
 
 func FilterInit() {
-	filters = append(filters, &AuthFilter{&BaseFilter{},}) //TODO 未来需要换成配置方式加载
+	filters = append(filters, &AuthFilter{}) //TODO 未来需要换成配置方式加载
 }
 
 func DoFilter(w http.ResponseWriter, r *http.Request) {

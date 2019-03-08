@@ -52,25 +52,3 @@ func handAdapter(w http.ResponseWriter, r *http.Request) {
 
 
 }
-
-//func wsHandler(w http.ResponseWriter, r *http.Request) {
-//	//	w.Write([]byte("hello"))
-//	var (
-//		wsConn *websocket.Conn
-//		err    error
-//		conn   *connect.Connection
-//		data   []byte
-//	)
-//	// 完成ws协议的握手操作
-//	// Upgrade:websocket
-//	if wsConn, err = upgrader.Upgrade(w, r, nil); err != nil {
-//		return
-//	}
-//
-//	if conn, err = connect.InitConnection(wsConn); err != nil {
-//		goto ERR
-//	}
-//
-//	handler.AdaptTask()
-//
-//}
