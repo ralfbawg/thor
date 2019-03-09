@@ -2,6 +2,7 @@ package connect
 
 import (
 	"errors"
+	"fmt"
 	. "github.com/gorilla/websocket"
 	"sync"
 )
@@ -34,6 +35,7 @@ func (conn *Connection) ReadMessage() (data []byte, err error) {
 
 	select {
 	case data = <-conn.inChan:
+		fmt.Printf(string(data))
 	case <-conn.closeChan:
 		err = errors.New("connection is closeed")
 	}
@@ -75,6 +77,7 @@ func (conn *Connection) readLoop() {
 		//阻塞在这里，等待inChan有空闲位置
 		select {
 		case conn.inChan <- data:
+			fmt.Printf(string(data))
 		case <-conn.closeChan: // closeChan 感知 conn断开
 			goto ERR
 		}
@@ -94,6 +97,7 @@ func (conn *Connection) writeLoop() {
 	for {
 		select {
 		case data = <-conn.outChan:
+			fmt.Printf(string(data))
 		case <-conn.closeChan:
 			goto ERR
 		}

@@ -1,12 +1,11 @@
-package task
+package websocket
 
 import (
 	ws "github.com/gorilla/websocket"
-	"websocket"
 )
 
 type WsTask struct {
-	wsManager *websocket.WsManager
+	wsManager *WsManager
 	// App id
 	appId string
 	// Registered clients.
@@ -49,15 +48,18 @@ func (task *WsTask) Broadcast(msg []byte ){
 	}
 }
 
-func NewWsTask(appId string, manager *websocket.WsManager) *WsTask {
-	return &WsTask{
+func NewWsTask(appId string, manager *WsManager) *WsTask {
+	task:= &WsTask{
 		appId:      appId,
 		wsManager:  manager,
 		clients:    make(map[*WsTaskClient]bool),
+		clientsIndex:make(map[string]*WsTaskClient),
 		broadcast:  make(chan []byte),
 		register:   make(chan *WsTaskClient),
 		unregister: make(chan *WsTaskClient),
 	}
+	go task.Run()
+	return task
 }
 
 func (task *WsTask) Run() {

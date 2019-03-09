@@ -9,11 +9,14 @@ import (
 	"syscall"
 )
 
+
 func main() {
-	config.Init_main()
+	config.InitMain()
 	logging.Debug("server start")
 	manager.StartServers()
 	ChanShutdown := make(chan os.Signal)
 	signal.Ignore(syscall.SIGHUP)
 	<-ChanShutdown
+
+
 }

@@ -1,7 +1,8 @@
-package task
+package websocket
 
 import (
 	"bytes"
+	"common/logging"
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
@@ -56,7 +57,7 @@ func (c *WsTaskClient) readGoroutine() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.task.broadcast <- message
+		logging.Debug("i am %s,id is %s,get message %s",c.task.appId,c.id,message)
 	}
 }
 

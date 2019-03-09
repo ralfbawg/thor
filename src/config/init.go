@@ -4,11 +4,13 @@ import (
 	"common/logging"
 	"db"
 	"filter"
+	"websocket"
 )
-func Init_main() {
+func InitMain() {
 	initConfigFile()
 	db.InitDb()
 	filter.FilterInit()
+	websocket.WsManagerInit()
 }
 func initConfigFile() (*Configure,error) {
 	logging.Debug("init db start")

@@ -1,0 +1,50 @@
+package main
+
+import (
+	"connect"
+	"flag"
+	"fmt"
+	"github.com/gorilla/websocket"
+	"log"
+	"net/http"
+)
+
+var addr = flag.String("addr", ":8888", "http service address")
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	// 允许跨域
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+func serveHome(w http.ResponseWriter, r *http.Request) {
+	log.Println(r.URL)
+	if r.URL.Path != "/" {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	http.ServeFile(w, r, "home.html")
+}
+
+func main() {
+	flag.Parse()
+	http.HandleFunc("/", serveHome)
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		if conn, err := upgrader.Upgrade(w, r, nil);err!=nil{
+			fmt.Printf("哦活,error:%s",err)
+		}else{
+			connect.InitConnection(conn)
+		}
+
+	})
+	err := http.ListenAndServe(*addr, nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
+}
