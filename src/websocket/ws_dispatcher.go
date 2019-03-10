@@ -5,7 +5,13 @@ import (
 	"filter"
 	"github.com/gorilla/websocket"
 	"net/http"
-	"strings"
+	"net/url"
+)
+
+const (
+	appIdParam  = "appId"
+	appKeyParam = "appKey"
+	uidParam    = "id"
 )
 
 var manager *WsManager
@@ -17,6 +23,18 @@ var upgrade = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+}
+
+func GetWsManager() *WsManager {
+	return manager
+}
+
+func (m *WsManager) Broadcast(appId string, msg string) {
+	if appId == "" {
+		m.totalBroadcast <- []byte(msg)
+	} else {
+		m.tasks[appId].Broadcast([]byte(msg))
+	}
 }
 
 type WsManager struct {
@@ -32,14 +50,17 @@ func WsManagerInit() {
 		register:       make(chan *WsTask),
 	}
 	go func() {
-		select {
-		case msg := <-manager.totalBroadcast:
-			for _, v := range manager.tasks {
-				v.Broadcast(msg)
+		for {
+			select {
+			case msg := <-manager.totalBroadcast:
+				for _, v := range manager.tasks {
+					v.Broadcast(msg)
+				}
+			case task := <-manager.register:
+				manager.tasks[task.appId] = task
 			}
-		case task := <-manager.register:
-			manager.tasks[task.appId] = task
 		}
+
 	}()
 }
 
@@ -59,23 +80,12 @@ func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
 	return m.tasks[appId]
 }
 
-//func WsDispatcher(wsConn *websocket.Conn,path string) {
-//	logging.Debug("ws server start")
-//	filter.DoFilter(w, r)
-//	if appId, exist := verifyAppInfo(path); exist == true {
-//	task := manager.GetOrCreateTask(appId)
-//	task.AddClient(appId, wsConn)
-//
-//	} else {
-//		w.Write([]byte("appId 错误或者不存在"))
-//	}
-//
-//}
 func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 	logging.Debug("ws server start")
 	filter.DoFilter(w, r)
-	path := r.RequestURI
-	if appId, exist := verifyAppInfo(path); exist == true {
+	param := r.URL.Query()
+	logging.Debug(param.Get("appId"))
+	if appId, exist := verifyAppInfo(param); exist == true {
 		if conn, err := upgrade.Upgrade(w, r, nil); err != nil {
 			logging.Error("哦活,error:%s", err)
 		} else {
@@ -92,11 +102,12 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 /*
  验证app信息
 */
-func verifyAppInfo(path string) (string, bool) {
-	paths := strings.Split(path, "/")
-	appId := paths[2]
-	appKey := paths[3]
-	logging.Debug("app id is %s,app key is %s", appId, appKey)
+func verifyAppInfo(param url.Values) (string, bool) {
+	//paths := strings.Split(path, "/")
+	appId := param.Get(appIdParam)
+	appKey := param.Get(appKeyParam)
+	id := param.Get(uidParam)
+	logging.Debug("app id is %s,app key is %s,uid is %s", appId, appKey, id)
 	//TODO 通过db查询确认
-	return appId, appKey == "test"
+	return appId, appKey != "fffasdfasdf" && id != "asdfasdfasd"
 }

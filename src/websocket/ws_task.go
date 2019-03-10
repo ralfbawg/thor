@@ -24,10 +24,11 @@ type WsTask struct {
 }
 
 func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
-	if task.clientsIndex[id] != nil { //TODO 如果存在，如何处理,暂时先断开，删除
-		task.clientsIndex[id].conn.Close()
-		delete(task.clients, task.clientsIndex[id])
-		delete(task.clientsIndex, id)
+	if client := task.clientsIndex[id]; client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
+		task.unregister <- client
+		//task.clientsIndex[id].conn.Close()
+		//delete(task.clients, task.clientsIndex[id])
+		//delete(task.clientsIndex, id)
 	}
 
 	client := &WsTaskClient{
@@ -42,21 +43,21 @@ func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
 	return client
 }
 
-func (task *WsTask) Broadcast(msg []byte ){
+func (task *WsTask) Broadcast(msg []byte) {
 	for k, _ := range task.clients {
 		k.send <- msg
 	}
 }
 
 func NewWsTask(appId string, manager *WsManager) *WsTask {
-	task:= &WsTask{
-		appId:      appId,
-		wsManager:  manager,
-		clients:    make(map[*WsTaskClient]bool),
-		clientsIndex:make(map[string]*WsTaskClient),
-		broadcast:  make(chan []byte),
-		register:   make(chan *WsTaskClient),
-		unregister: make(chan *WsTaskClient),
+	task := &WsTask{
+		appId:        appId,
+		wsManager:    manager,
+		clients:      make(map[*WsTaskClient]bool),
+		clientsIndex: make(map[string]*WsTaskClient),
+		broadcast:    make(chan []byte),
+		register:     make(chan *WsTaskClient),
+		unregister:   make(chan *WsTaskClient),
 	}
 	go task.Run()
 	return task
