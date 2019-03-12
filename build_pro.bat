@@ -1,5 +1,7 @@
+set GOPATH=%~dp0
+
 set GOARCH=amd64
 
 set GOOS=linux
 
-go build src/main/main.go "-w -s" -o bin
+go build  -o bin/thor src/main/main.go

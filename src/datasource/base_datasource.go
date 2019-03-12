@@ -15,6 +15,7 @@ func (d *BaseDataSource) init() {
 	logging.Debug("default init")
 }
 
-func (d *BaseDataSource) getData() {
+func (d *BaseDataSource) getData() interface{} {
 	logging.Debug("test")
+	return "test"
 }

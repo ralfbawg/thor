@@ -2,10 +2,10 @@ package websocket
 
 import (
 	"common/logging"
-	"filter"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"net/url"
+	"util/uuid"
 )
 
 const (
@@ -81,18 +81,17 @@ func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
 }
 
 func WsDispatcher(w http.ResponseWriter, r *http.Request) {
-	logging.Debug("ws server start")
-	filter.DoFilter(w, r)
+	//logging.Debug("ws server start")
+	//filter.DoFilter(w, r)
 	param := r.URL.Query()
-	logging.Debug(param.Get("appId"))
-	if appId, exist := verifyAppInfo(param); exist == true {
+	//logging.Debug(param.Get("appId"))
+	if appId,id, exist := verifyAppInfo(param); exist == true {
 		if conn, err := upgrade.Upgrade(w, r, nil); err != nil {
 			logging.Error("哦活,error:%s", err)
 		} else {
 			task := manager.GetOrCreateTask(appId)
-			task.AddClient(appId, conn)
+			task.AddClient(id, conn)
 		}
-
 	} else {
 		w.Write([]byte("appId 错误或者不存在"))
 	}
@@ -102,12 +101,12 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 /*
  验证app信息
 */
-func verifyAppInfo(param url.Values) (string, bool) {
-	//paths := strings.Split(path, "/")
-	appId := param.Get(appIdParam)
-	appKey := param.Get(appKeyParam)
-	id := param.Get(uidParam)
-	logging.Debug("app id is %s,app key is %s,uid is %s", appId, appKey, id)
+func verifyAppInfo(param url.Values) (string,string, bool) {
+	//appId := param.Get(appIdParam)
+	//appKey := param.Get(appKeyParam)
+	//id := param.Get(uidParam)
+	//logging.Debug("app id is %s,app key is %s,uid is %s", appId, appKey, id)
 	//TODO 通过db查询确认
-	return appId, appKey != "fffasdfasdf" && id != "asdfasdfasd"
+	//return id, appKey != "fffasdfasdf" && id != "asdfasdfasd"
+	return "test",uuid.Generate().String(), true
 }

@@ -15,6 +15,12 @@
 			"revisionTime": "2018-12-18T07:24:45Z"
 		},
 		{
+			"checksumSHA1": "ZSOYAmjVqU70aK1ZETn+0iWf/xo=",
+			"path": "github.com/jteeuwen/go-bindata",
+			"revision": "6025e8de665b31fa74ab1a66f2cddd8c0abf887e",
+			"revisionTime": "2018-03-05T03:04:58Z"
+		},
+		{
 			"checksumSHA1": "oNqPrS2edE8peI3ah2INe379k8E=",
 			"path": "gopkg.in/yaml.v2",
 			"revision": "51d6538a90f86fe93ac480b35f37b2be17fef232",

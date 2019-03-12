@@ -36,13 +36,11 @@ func StartServers() {
 func startHttpServer() {
 	logging.Info("start http server")
 	tempConfig, _ := config.ConfigStore.GetConfig(false)
-
 	http.HandleFunc("/", handAdapter)
 	err := http.ListenAndServe(":"+tempConfig.Server.Port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-	//http.ListenAndServe(":"+tempConfig.Server.Port, nil)
 	logging.Info("http server 启动成功")
 }
 func startTcpServer() {
@@ -60,14 +58,16 @@ func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 		appId := r.URL.Query().Get("appId")
 		websocket2.GetWsManager().Broadcast(appId,msg)
 	}
-	logging.Debug("process api")
+	//logging.Debug("process api")
 }
 func handAdapter(w http.ResponseWriter, r *http.Request) {
-	logging.Debug("i am in")
-
 	paths := strings.Split(r.RequestURI, "/")
 	actionStr := strings.Title(paths[1]) + ActionSuffix
-	logging.Debug("action string is " + actionStr)
+
+	if strings.Contains(strings.Title(paths[1]),"?") {
+		actionStr = strings.Split(strings.Title(paths[1]),"?")[0]+ ActionSuffix
+	}
+	//logging.Debug("action string is " + actionStr)
 	obj := reflect.ValueOf(serverM).MethodByName(actionStr)
 	if obj.IsValid() {
 		obj.Call([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
