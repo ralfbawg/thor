@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"util/uuid"
+	"util"
 )
 
 const (
@@ -33,31 +34,39 @@ func (m *WsManager) Broadcast(appId string, msg string) {
 	if appId == "" {
 		m.totalBroadcast <- []byte(msg)
 	} else {
-		m.tasks[appId].Broadcast([]byte(msg))
+		if task := m.tasks.Get(appId); task != nil {
+			task.(*WsTask).Broadcast([]byte(msg))
+		}
 	}
 }
 
 type WsManager struct {
-	tasks          map[string]*WsTask
+	tasks          *util.ConcurrentMap
 	totalBroadcast chan []byte
 	register       chan *WsTask
+	taskCount      int
 }
 
 func WsManagerInit() {
 	manager = &WsManager{
-		tasks:          make(map[string]*WsTask),
+		tasks:          util.NewConcurrentMap(),
 		totalBroadcast: make(chan []byte),
-		register:       make(chan *WsTask),
+		register:       make(chan *WsTask, 1000),
 	}
 	go func() {
 		for {
 			select {
 			case msg := <-manager.totalBroadcast:
-				for _, v := range manager.tasks {
-					v.Broadcast(msg)
-				}
+				manager.tasks.Foreach(func(k string, i interface{}) {
+					i.(*WsTask).Broadcast(msg)
+				})
+				//for _, v := range manager.tasks.Foreach() {
+				//	v.Broadcast(msg)
+				//}
 			case task := <-manager.register:
-				manager.tasks[task.appId] = task
+				manager.tasks.Put(task.appId, task)
+				//[task.appId] = task
+				manager.taskCount++
 			}
 		}
 
@@ -68,16 +77,17 @@ func WsManagerInit() {
 获取当前有多少任务
 */
 func (m *WsManager) getSize() int {
-	return len(m.tasks)
+	return len(m.tasks.Map)
 }
 
 func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
 
-	if m.tasks[appId] == nil {
+	if m.tasks.Get(appId) == nil {
 		task := NewWsTask(appId, m)
-		m.tasks[appId] = task
+		m.tasks.Put(appId, task)
+		//m.tasks[appId] = task
 	}
-	return m.tasks[appId]
+	return m.tasks.Get(appId).(*WsTask)
 }
 
 func WsDispatcher(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +95,7 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 	//filter.DoFilter(w, r)
 	param := r.URL.Query()
 	//logging.Debug(param.Get("appId"))
-	if appId,id, exist := verifyAppInfo(param); exist == true {
+	if appId, id, exist := verifyAppInfo(param); exist == true {
 		if conn, err := upgrade.Upgrade(w, r, nil); err != nil {
 			logging.Error("哦活,error:%s", err)
 		} else {
@@ -101,12 +111,12 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 /*
  验证app信息
 */
-func verifyAppInfo(param url.Values) (string,string, bool) {
+func verifyAppInfo(param url.Values) (string, string, bool) {
 	//appId := param.Get(appIdParam)
 	//appKey := param.Get(appKeyParam)
 	//id := param.Get(uidParam)
 	//logging.Debug("app id is %s,app key is %s,uid is %s", appId, appKey, id)
 	//TODO 通过db查询确认
 	//return id, appKey != "fffasdfasdf" && id != "asdfasdfasd"
-	return "test",uuid.Generate().String(), true
+	return "test", uuid.Generate().String(), true
 }

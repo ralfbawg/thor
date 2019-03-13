@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
+	"common/logging"
 )
 
 type WsTaskClient struct {
@@ -45,8 +46,8 @@ func (c *WsTaskClient) readGoroutine() {
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
-	//c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	//c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -57,7 +58,7 @@ func (c *WsTaskClient) readGoroutine() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		c.send<-[]byte("hello")
-		//logging.Debug("i am %s,id is %s,get message %s",c.task.appId,c.id,message)
+		logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }
 
@@ -71,7 +72,7 @@ func (c *WsTaskClient) writeGoroutine() {
 	for {
 		select {
 		case message, ok := <-c.send:
-			//c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
@@ -94,11 +95,11 @@ func (c *WsTaskClient) writeGoroutine() {
 			if err := w.Close(); err != nil {
 				return
 			}
-		//case <-ticker.C:
-		//	c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-		//	if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-		//		return
-		//	}
+		case <-ticker.C:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
 		}
 	}
 }

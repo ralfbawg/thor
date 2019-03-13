@@ -3,10 +3,14 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "eyCJTSzH8Eu81PaaXpvXPShc9+s=",
+			"path": "appengine/cloudsql",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "D84lc0EqDR5n5gPJ3wn4FzmALyk=",
 			"path": "github.com/go-sql-driver/mysql",
-			"revision": "972a708cf97995463843c08c8585b26997daf0e1",
-			"revisionTime": "2019-02-17T07:26:58Z"
+			"revision": "2c9d54fefcfb443251f5b92cd5106cf4dc07b880",
+			"revisionTime": "2019-03-08T05:26:31Z"
 		},
 		{
 			"checksumSHA1": "c//wUUHFTjUFshMO7TKJKD+1W+g=",
@@ -19,6 +23,12 @@
 			"path": "github.com/jteeuwen/go-bindata",
 			"revision": "6025e8de665b31fa74ab1a66f2cddd8c0abf887e",
 			"revisionTime": "2018-03-05T03:04:58Z"
+		},
+		{
+			"checksumSHA1": "W/pYxFe8/FHT10/wulwesJsOoUw=",
+			"path": "google.golang.org/appengine/cloudsql",
+			"revision": "54a98f90d1c46b7731eb8fb305d2a321c30ef610",
+			"revisionTime": "2019-02-15T20:43:44Z"
 		},
 		{
 			"checksumSHA1": "oNqPrS2edE8peI3ah2INe379k8E=",

@@ -2,6 +2,7 @@ package websocket
 
 import (
 	ws "github.com/gorilla/websocket"
+	"util"
 )
 
 type WsTask struct {
@@ -9,9 +10,9 @@ type WsTask struct {
 	// App id
 	appId string
 	// Registered clients.
-	clients map[*WsTaskClient]bool
+	//clients *util.ConcurrentMap
 
-	clientsIndex map[string]*WsTaskClient
+	clients *util.ConcurrentMap
 
 	// Inbound messages from the clients.
 	broadcast chan []byte
@@ -21,11 +22,13 @@ type WsTask struct {
 
 	// Unregister requests from clients.
 	unregister chan *WsTaskClient
+
+	clientCount int
 }
 
 func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
-	if client := task.clientsIndex[id]; client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
-		task.unregister <- client
+	if client := task.clients.Get(id); client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
+		task.unregister <- client.(*WsTaskClient)
 		//task.clientsIndex[id].conn.Close()
 		//delete(task.clients, task.clientsIndex[id])
 		//delete(task.clientsIndex, id)
@@ -44,20 +47,21 @@ func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
 }
 
 func (task *WsTask) Broadcast(msg []byte) {
-	for k, _ := range task.clients {
-		k.send <- msg
+	for _, v := range task.clients.Map {
+		v.(*WsTaskClient).send <- msg
 	}
 }
 
 func NewWsTask(appId string, manager *WsManager) *WsTask {
 	task := &WsTask{
-		appId:        appId,
-		wsManager:    manager,
-		clients:      make(map[*WsTaskClient]bool),
-		clientsIndex: make(map[string]*WsTaskClient),
+		appId:     appId,
+		wsManager: manager,
+		//clients:      make(map[*WsTaskClient]bool),
+		clients:      util.NewConcurrentMap(),
+		//clientsIndex: util.NewConcurrentMap(),
 		broadcast:    make(chan []byte),
-		register:     make(chan *WsTaskClient),
-		unregister:   make(chan *WsTaskClient),
+		register:     make(chan *WsTaskClient, 1000),
+		unregister:   make(chan *WsTaskClient, 1000),
 	}
 	go task.Run()
 	return task
@@ -67,23 +71,23 @@ func (task *WsTask) Run() {
 	for {
 		select {
 		case client := <-task.register:
-			task.clients[client] = true
-			task.clientsIndex[client.id] = client
+			task.clients.Put(client.id, client)
+			task.clientCount++
 		case client := <-task.unregister:
-			if _, ok := task.clients[client]; ok {
-				delete(task.clients, client)
-				delete(task.clientsIndex, client.id)
+			if tClient := task.clients.Get(client.id); tClient != nil {
+				task.clients.Del(client.id)
+				//task.clientsIndex.Del(client.id)
+				//delete(task.clientsIndex, client.id)
 				close(client.send)
+				task.clientCount--
 			}
 		case message := <-task.broadcast:
-			for client := range task.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(task.clients, client)
-				}
-			}
+			task.clients.Foreach(func(k string, v interface{}) {
+				v.(*WsTaskClient).send<-message
+			})
+			//for client := range task.clients {
+			//	client.send <- message
+			//}
 		}
 	}
 }
