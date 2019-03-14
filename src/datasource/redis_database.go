@@ -4,6 +4,9 @@ type RedisDatasource struct {
 	BaseDataSource
 }
 
-func (r *RedisDatasource)getData()interface{}  {
+func (r *RedisDatasource) getData(id string) interface{} {
 	return "Test"
+}
+func (r *RedisDatasource) init()  {
+
 }

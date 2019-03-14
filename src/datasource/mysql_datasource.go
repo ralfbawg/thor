@@ -2,19 +2,18 @@ package datasource
 
 import "sync"
 
-type MysqlDatasouce struct {
-	DbDatasouce
+type MysqlDatasource struct {
+	DbDatasource
 }
 
-
-func (mysql *MysqlDatasouce) init() {
-	if mysql.usePool {
+func (mysql *MysqlDatasource) init() {
+	if mysql.poolFlag {
 		mysql.pool = sync.Pool{
 			New: mysql.getConnection,
 		}
 	}
 }
 
-func (mysql *MysqlDatasouce) getConnection() interface{} {
-
+func (mysql *MysqlDatasource) getConnection() interface{} {
+	return nil
 }

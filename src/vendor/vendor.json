@@ -13,6 +13,24 @@
 			"revisionTime": "2019-03-08T05:26:31Z"
 		},
 		{
+			"checksumSHA1": "Fd3AdCTynYnzoXmBQYJ4p4VYcbE=",
+			"path": "github.com/go-xorm/builder",
+			"revision": "1d658d7596c25394aab557ef5b50ef35bf706384",
+			"revisionTime": "2019-01-24T07:59:16Z"
+		},
+		{
+			"checksumSHA1": "purSaleTGYnxpOjDD06465Q8ids=",
+			"path": "github.com/go-xorm/core",
+			"revision": "ccc80c1adf1f6172bbc548877f50a1163041a40a",
+			"revisionTime": "2019-01-24T07:01:53Z"
+		},
+		{
+			"checksumSHA1": "eXeLMsOeYtBpY09qjImLYIMtnqg=",
+			"path": "github.com/go-xorm/xorm",
+			"revision": "1c2d47e0da970d1b3214cd57e6ab9e9b81556ab2",
+			"revisionTime": "2019-03-13T11:02:41Z"
+		},
+		{
 			"checksumSHA1": "c//wUUHFTjUFshMO7TKJKD+1W+g=",
 			"path": "github.com/gorilla/websocket",
 			"revision": "7c8e298727d149d7c329b4dec7e94e1932ac5c11",
@@ -23,6 +41,10 @@
 			"path": "github.com/jteeuwen/go-bindata",
 			"revision": "6025e8de665b31fa74ab1a66f2cddd8c0abf887e",
 			"revisionTime": "2018-03-05T03:04:58Z"
+		},
+		{
+			"path": "go-sql-driver/mysql",
+			"revision": ""
 		},
 		{
 			"checksumSHA1": "W/pYxFe8/FHT10/wulwesJsOoUw=",
