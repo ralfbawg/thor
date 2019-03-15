@@ -1,14 +1,11 @@
 package statistics
 
-var WsCount int = 0
+import "websocket"
 
 
-func GetWsCount() int{
-	return WsCount
+func GetTaskCount() int {
+	return websocket.GetWsManager().TaskCount
 }
-
-func InitWsStatictics(ch chan int){
-	for  {
-		WsCount+= <-ch
-	}
+func GetClientCount(appId string) int {
+	return websocket.GetWsManager().GetOrCreateTask(appId).GetClientCount()
 }

@@ -44,7 +44,7 @@ type WsManager struct {
 	tasks          *util.ConcurrentMap
 	totalBroadcast chan []byte
 	register       chan *WsTask
-	taskCount      int
+	TaskCount      int
 }
 
 func WsManagerInit() {
@@ -66,7 +66,7 @@ func WsManagerInit() {
 			case task := <-manager.register:
 				manager.tasks.Put(task.appId, task)
 				//[task.appId] = task
-				manager.taskCount++
+				manager.TaskCount++
 			}
 		}
 

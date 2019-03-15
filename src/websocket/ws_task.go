@@ -51,17 +51,20 @@ func (task *WsTask) Broadcast(msg []byte) {
 		v.(*WsTaskClient).send <- msg
 	}
 }
+func (task *WsTask) GetClientCount() int {
+	return task.clientCount
+}
 
 func NewWsTask(appId string, manager *WsManager) *WsTask {
 	task := &WsTask{
 		appId:     appId,
 		wsManager: manager,
 		//clients:      make(map[*WsTaskClient]bool),
-		clients:      util.NewConcurrentMap(),
+		clients: util.NewConcurrentMap(),
 		//clientsIndex: util.NewConcurrentMap(),
-		broadcast:    make(chan []byte),
-		register:     make(chan *WsTaskClient, 1000),
-		unregister:   make(chan *WsTaskClient, 1000),
+		broadcast:  make(chan []byte),
+		register:   make(chan *WsTaskClient, 1000),
+		unregister: make(chan *WsTaskClient, 1000),
 	}
 	go task.Run()
 	return task
@@ -83,7 +86,7 @@ func (task *WsTask) Run() {
 			}
 		case message := <-task.broadcast:
 			task.clients.Foreach(func(k string, v interface{}) {
-				v.(*WsTaskClient).send<-message
+				v.(*WsTaskClient).send <- message
 			})
 			//for client := range task.clients {
 			//	client.send <- message
