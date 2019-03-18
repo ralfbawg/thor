@@ -3,6 +3,7 @@ package websocket
 import (
 	ws "github.com/gorilla/websocket"
 	"util"
+	"sync/atomic"
 )
 
 type WsTask struct {
@@ -23,7 +24,7 @@ type WsTask struct {
 	// Unregister requests from clients.
 	unregister chan *WsTaskClient
 
-	clientCount int
+	clientCount int64
 }
 
 func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
@@ -51,7 +52,7 @@ func (task *WsTask) Broadcast(msg []byte) {
 		v.(*WsTaskClient).send <- msg
 	}
 }
-func (task *WsTask) GetClientCount() int {
+func (task *WsTask) GetClientCount() int64 {
 	return task.clientCount
 }
 
@@ -66,6 +67,7 @@ func NewWsTask(appId string, manager *WsManager) *WsTask {
 		register:   make(chan *WsTaskClient, 1000),
 		unregister: make(chan *WsTaskClient, 1000),
 	}
+	manager.register <- task
 	go task.Run()
 	return task
 }
@@ -75,22 +77,19 @@ func (task *WsTask) Run() {
 		select {
 		case client := <-task.register:
 			task.clients.Put(client.id, client)
-			task.clientCount++
+			atomic.AddInt64(&task.clientCount, 1)
+			atomic.AddInt64(&task.wsManager.ClientCount, 1)
 		case client := <-task.unregister:
 			if tClient := task.clients.Get(client.id); tClient != nil {
 				task.clients.Del(client.id)
-				//task.clientsIndex.Del(client.id)
-				//delete(task.clientsIndex, client.id)
 				close(client.send)
-				task.clientCount--
+				atomic.AddInt64(&task.clientCount, -1)
+				atomic.AddInt64(&task.wsManager.ClientCount, -1)
 			}
 		case message := <-task.broadcast:
 			task.clients.Foreach(func(k string, v interface{}) {
 				v.(*WsTaskClient).send <- message
 			})
-			//for client := range task.clients {
-			//	client.send <- message
-			//}
 		}
 	}
 }

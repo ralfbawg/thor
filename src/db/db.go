@@ -5,7 +5,6 @@ import (
 	"datasource"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/go-xorm/xorm"
 )
 
 var db *datasource.DbDatasource
@@ -20,7 +19,7 @@ func InitDb() {
 		MaxConnection:     100,
 		MaxIdleConnection: 100,
 	}
-	engine, err := xorm.NewEngine(driverName, dataSourceName)
+	//engine, err := xorm.NewEngine(db.DbType, dataSourceName)
 	if rows, err := db.GetConnection().Query("select * from TBL_CI_REPO"); err == nil {
 		columns, _ := rows.Columns()
 		scanArgs := make([]interface{}, len(columns))

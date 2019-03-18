@@ -1,12 +1,13 @@
 package websocket
 
 import (
-	"common/logging"
 	"github.com/gorilla/websocket"
 	"net/http"
 	"net/url"
 	"util/uuid"
 	"util"
+	"common/logging"
+	"sync/atomic"
 )
 
 const (
@@ -44,7 +45,8 @@ type WsManager struct {
 	tasks          *util.ConcurrentMap
 	totalBroadcast chan []byte
 	register       chan *WsTask
-	TaskCount      int
+	TaskCount      int64
+	ClientCount    int64
 }
 
 func WsManagerInit() {
@@ -65,8 +67,7 @@ func WsManagerInit() {
 				//}
 			case task := <-manager.register:
 				manager.tasks.Put(task.appId, task)
-				//[task.appId] = task
-				manager.TaskCount++
+				atomic.AddInt64(&manager.TaskCount, 1)
 			}
 		}
 
@@ -76,10 +77,20 @@ func WsManagerInit() {
 /**
 获取当前有多少任务
 */
-func (m *WsManager) getSize() int {
+func (m *WsManager) GetSize() int {
 	return len(m.tasks.Map)
 }
 
+/**
+获取当前有多少任务
+*/
+func (m *WsManager) GetTasks() *util.ConcurrentMap {
+	return m.tasks
+}
+
+/**
+获取或者新建一个task
+ */
 func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
 
 	if m.tasks.Get(appId) == nil {

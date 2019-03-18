@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
-	"common/logging"
 )
 
 type WsTaskClient struct {
@@ -58,7 +57,7 @@ func (c *WsTaskClient) readGoroutine() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		c.send<-[]byte("hello")
-		logging.Debug("id %s get msg: %s",c.id,message)
+		//logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }
 

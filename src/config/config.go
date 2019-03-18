@@ -14,6 +14,7 @@ type Configure struct {
 	}
 	Log struct {
 		Filepath string `yaml:"filepath"`
+		Level string `yaml:"level"`
 	}
 	Server struct {
 		Port           string `yaml:"port"`
