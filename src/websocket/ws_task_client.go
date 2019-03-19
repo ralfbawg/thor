@@ -18,6 +18,7 @@ type WsTaskClient struct {
 
 	id string
 }
+
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
@@ -37,8 +38,6 @@ var (
 	space   = []byte{' '}
 )
 
-
-
 func (c *WsTaskClient) readGoroutine() {
 	defer func() {
 		c.task.unregister <- c
@@ -56,11 +55,10 @@ func (c *WsTaskClient) readGoroutine() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.send<-[]byte("hello")
+		c.send <- []byte("hello")
 		//logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }
-
 
 func (c *WsTaskClient) writeGoroutine() {
 	ticker := time.NewTicker(pingPeriod)
@@ -103,3 +101,6 @@ func (c *WsTaskClient) writeGoroutine() {
 	}
 }
 
+func (c *WsTaskClient) Send(msg []byte) {
+	c.send <- msg
+}

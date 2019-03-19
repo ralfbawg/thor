@@ -3,7 +3,6 @@ package logging
 import (
 	"fmt"
 	"time"
-	"config"
 )
 
 const (
@@ -13,11 +12,18 @@ const (
 	warnLevel  = "warn"
 )
 
-func init() {
+var currentLogLevel = infoLevel
+
+func Init(level string) {
+	currentLogLevel = level
+}
+
+func SetLogLevel(level string) {
+	currentLogLevel = level
 }
 
 func Debug(format string, values ...interface{}) {
-	switch config.ConfigStore.Log.Level {
+	switch currentLogLevel {
 	case debugLevel:
 		time_string := time.Now().Format("2006-01-02 15:04:05")
 		log_string := "[" + time_string + "] " + "INFO" + " " + fmt.Sprintf(format, values...)
@@ -26,7 +32,7 @@ func Debug(format string, values ...interface{}) {
 }
 
 func Info(format string, values ...interface{}) {
-	switch config.ConfigStore.Log.Level {
+	switch currentLogLevel {
 	case errorLevel, warnLevel, infoLevel:
 		time_string := time.Now().Format("2006-01-02 15:04:05")
 		log_string := "[" + time_string + "] " + "INFO" + " " + fmt.Sprintf(format, values...)

@@ -2,7 +2,6 @@ package config
 
 import (
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"log"
 )
 
@@ -34,7 +33,8 @@ func (c *Configure) GetConfig(reload bool) (*Configure, error) {
 	if !reload && ConfigStore.inited {
 		return ConfigStore, nil
 	}
-	yamlFile, err := ioutil.ReadFile("src/config.yaml")
+	//yamlFile, err := ioutil.ReadFile("src/config.yaml")
+	yamlFile, err := Asset("src/config/file/config.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}

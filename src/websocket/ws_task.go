@@ -93,3 +93,6 @@ func (task *WsTask) Run() {
 		}
 	}
 }
+func (task *WsTask) GetClient(uid string) *WsTaskClient {
+	return task.clients.Get(uid).(*WsTaskClient)
+}

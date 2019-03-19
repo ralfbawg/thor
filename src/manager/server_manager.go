@@ -28,6 +28,12 @@ var serverM = &serverManager{}
 type serverManager struct {
 }
 
+func (c *serverManager) setWsReadBuffSize(size int) {
+	upgrade.ReadBufferSize = size
+}
+func (c *serverManager) setWsWriteBuffSize(size int) {
+	upgrade.WriteBufferSize = size
+}
 func StartServers() {
 	go startHttpServer()
 	go startTcpServer()
@@ -48,15 +54,21 @@ func startTcpServer() {
 
 }
 func (c *serverManager) WsHandler(w http.ResponseWriter, r *http.Request) {
-	websocket2.WsDispatcher(w,r)
+	websocket2.WsDispatcher(w, r)
 
 }
 func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.RequestURI, "/")
-	if strings.HasPrefix(paths[2],"b") {
+	if strings.HasPrefix(paths[2], "b") {
 		msg := r.URL.Query().Get("msg")
 		appId := r.URL.Query().Get("appId")
-		websocket2.GetWsManager().Broadcast(appId,msg)
+		uId := r.URL.Query().Get("uId")
+		if appId != "" && uId != "" {
+			task := websocket2.GetWsManager().GetOrCreateTask(appId)
+			task.GetClient(uId).Send([]byte(msg))
+		} else {
+			websocket2.GetWsManager().Broadcast(appId, msg)
+		}
 	}
 	//logging.Debug("process api")
 }
@@ -64,8 +76,8 @@ func handAdapter(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.RequestURI, "/")
 	actionStr := strings.Title(paths[1]) + ActionSuffix
 
-	if strings.Contains(strings.Title(paths[1]),"?") {
-		actionStr = strings.Split(strings.Title(paths[1]),"?")[0]+ ActionSuffix
+	if strings.Contains(strings.Title(paths[1]), "?") {
+		actionStr = strings.Split(strings.Title(paths[1]), "?")[0] + ActionSuffix
 	}
 	//logging.Debug("action string is " + actionStr)
 	obj := reflect.ValueOf(serverM).MethodByName(actionStr)
@@ -73,5 +85,3 @@ func handAdapter(w http.ResponseWriter, r *http.Request) {
 		obj.Call([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
 	}
 }
-
-

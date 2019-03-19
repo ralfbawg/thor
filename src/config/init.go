@@ -2,19 +2,19 @@ package config
 
 import (
 	"common/logging"
-	"db"
 	"filter"
 	"websocket"
 )
 func InitMain() {
 	initConfigFile()
-	db.InitDb()
+	//db.InitDb()
 	filter.FilterInit()
 	websocket.WsManagerInit()
 }
 func initConfigFile() (*Configure,error) {
 	logging.Debug("init db start")
 	if c,err := ConfigStore.GetConfig(true);err==nil{
+		logging.Init(c.Log.Level)
 		logging.Debug("db init success")
 		return c,nil
 	}else {
