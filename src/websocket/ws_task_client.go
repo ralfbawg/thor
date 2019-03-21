@@ -48,23 +48,18 @@ func (c *WsTaskClient) readGoroutine() {
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.conn.SetPingHandler(func(appData string) error { c.conn.WriteControl(websocket.PongMessage, nil, time.Now().Add(pongWait)); return nil })
 	for {
-		msgType, message, err := c.conn.ReadMessage()
+		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-		if msgType == websocket.PingMessage {
-			c.conn.SetReadDeadline(time.Now().Add(pongWait))
-			if err := c.conn.WriteMessage(websocket.PongMessage, nil); err != nil {
-				return
-			}
-		} else {
-			message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-			c.send <- []byte(helloMessage)
-		}
+
+		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		c.send <- []byte(helloMessage)
 		//logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }
