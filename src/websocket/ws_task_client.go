@@ -61,10 +61,10 @@ func (c *WsTaskClient) readGoroutine() {
 			if err := c.conn.WriteMessage(websocket.PongMessage, nil); err != nil {
 				return
 			}
+		} else {
+			message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+			c.send <- []byte(helloMessage)
 		}
-
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.send <- []byte(helloMessage)
 		//logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }
