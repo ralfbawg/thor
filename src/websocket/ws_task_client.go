@@ -31,6 +31,8 @@ const (
 
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
+
+	helloMessage = "hello"
 )
 
 var (
@@ -55,7 +57,7 @@ func (c *WsTaskClient) readGoroutine() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.send <- []byte("hello")
+		c.send <- []byte(helloMessage)
 		//logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }
@@ -66,6 +68,11 @@ func (c *WsTaskClient) writeGoroutine() {
 		ticker.Stop()
 		c.conn.Close()
 	}()
+
+	if w, err := c.conn.NextWriter(websocket.TextMessage); err == nil {
+		w.Write([]byte(helloMessage))
+	}
+
 	for {
 		select {
 		case message, ok := <-c.send:

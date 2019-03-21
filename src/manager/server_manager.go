@@ -13,6 +13,7 @@ import (
 
 const (
 	ActionSuffix = "Handler"
+	SuccessMsg   = "success"
 )
 
 var upgrade = websocket.Upgrader{
@@ -42,7 +43,7 @@ func StartServers() {
 func startHttpServer() {
 	logging.Info("start http server")
 	tempConfig, _ := config.ConfigStore.GetConfig(false)
-	http.HandleFunc("/", handAdapter)
+	http.HandleFunc("/", handlerAdapter)
 	err := http.ListenAndServe(":"+tempConfig.Server.Port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
@@ -69,10 +70,11 @@ func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			websocket2.GetWsManager().Broadcast(appId, msg)
 		}
+		w.Write([]byte(SuccessMsg))
 	}
 	//logging.Debug("process api")
 }
-func handAdapter(w http.ResponseWriter, r *http.Request) {
+func handlerAdapter(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.RequestURI, "/")
 	actionStr := strings.Title(paths[1]) + ActionSuffix
 

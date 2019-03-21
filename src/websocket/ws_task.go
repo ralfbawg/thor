@@ -39,7 +39,7 @@ func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
 		task: task,
 		conn: conn,
 		id:   id,
-		send: make(chan []byte),
+		send: make(chan []byte, 10),
 	}
 	client.task.register <- client
 	go client.readGoroutine()
