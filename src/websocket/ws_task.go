@@ -108,7 +108,11 @@ func (task *WsTask) Run() {
 	}
 }
 func (task *WsTask) GetClient(uid string) *WsTaskClient {
-	return task.clients.Get(uid).(*WsTaskClient)
+	if client := task.clients.Get(uid); client != nil {
+		return client.(*WsTaskClient)
+	} else {
+		return nil
+	}
 }
 func (task *WsTask) statistic() {
 	for {
@@ -121,8 +125,9 @@ func (task *WsTask) statistic() {
 			}
 			count := atomic.AddInt64(&task.clientCount, in)
 			atomic.AddInt64(&task.wsManager.ClientCount, in)
-			if in < 0 && count == 0 {
+			if in < 0 && count <= 0 {
 				atomic.AddInt64(&task.wsManager.TaskCount, in)
+				manager.tasks.Del(task.appId)
 			}
 		}
 	}

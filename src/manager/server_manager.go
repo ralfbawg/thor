@@ -63,12 +63,20 @@ func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(paths[2], "b") {
 		msg := r.URL.Query().Get("msg")
 		appId := r.URL.Query().Get("appId")
-		uId := r.URL.Query().Get("uId")
-		if appId != "" && uId != "" {
+		uid := r.URL.Query().Get("uid")
+		if appId != "" && uid != "" {
 			task := websocket2.GetWsManager().GetOrCreateTask(appId)
-			task.GetClient(uId).Send([]byte(msg))
-		} else {
+			if client := task.GetClient(uid); client != nil {
+				client.Send([]byte(msg))
+			} else {
+				w.Write([]byte("the client(" + uid + ") is closed or not exist"))
+				return
+			}
+		} else if appId != "" {
 			websocket2.GetWsManager().Broadcast(appId, msg)
+		} else {
+			w.Write([]byte("parameter appId is empty or not exist"))
+			return
 		}
 		w.Write([]byte(SuccessMsg))
 	}
