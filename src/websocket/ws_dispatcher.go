@@ -8,6 +8,7 @@ import (
 	"util"
 	"common/logging"
 	"sync/atomic"
+	"time"
 )
 
 const (
@@ -59,12 +60,12 @@ func WsManagerInit() {
 		for {
 			select {
 			case msg := <-manager.totalBroadcast:
+				start := time.Now()
 				manager.tasks.Foreach(func(k string, i interface{}) {
 					i.(*WsTask).Broadcast(msg)
 				})
-				//for _, v := range manager.tasks.Foreach() {
-				//	v.Broadcast(msg)
-				//}
+				end := time.Now()
+				logging.Debug("broadcast time cost %d second", end.Sub(start).Seconds())
 			case task := <-manager.register:
 				manager.tasks.Put(task.appId, task)
 				atomic.AddInt64(&manager.TaskCount, 1)
@@ -77,8 +78,8 @@ func WsManagerInit() {
 /**
 获取当前有多少任务
 */
-func (m *WsManager) GetSize() int {
-	return len(m.tasks.Map)
+func (m *WsManager) GetSize() int64 {
+	return int64(len(m.tasks.Map))
 }
 
 /**
@@ -89,6 +90,13 @@ func (m *WsManager) GetTasks() *util.ConcurrentMap {
 }
 
 /**
+获取当前有多少任务
+*/
+func (m *WsManager) GetTaskCount() int64 {
+	return atomic.LoadInt64(&m.TaskCount)
+}
+
+/**
 获取或者新建一个task
  */
 func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
@@ -96,9 +104,11 @@ func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
 	if m.tasks.Get(appId) == nil {
 		task := NewWsTask(appId, m)
 		m.tasks.Put(appId, task)
-		//m.tasks[appId] = task
 	}
 	return m.tasks.Get(appId).(*WsTask)
+}
+func (wsManager *WsManager) GetAllClientCount() int64 {
+	return atomic.LoadInt64(&wsManager.ClientCount)
 }
 
 func WsDispatcher(w http.ResponseWriter, r *http.Request) {

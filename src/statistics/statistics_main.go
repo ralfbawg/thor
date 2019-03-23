@@ -42,6 +42,12 @@ func PrintStatistics() {
 		select {
 		case <-tickA.C:
 			logging.Debug("tasks count:%d", GetTaskCount())
+			//manager := websocket.GetWsManager()
+			//taskMap := manager.GetTasks()
+			//taskMap.Foreach(func(s string, i interface{}) {
+			//	logging.Debug("task key=%s", s)
+			//	logging.Debug("task value=%s", i.(*websocket.WsTask).GetAppId())
+			//})
 		case <-tickB.C:
 			logging.Debug("clients count:%d", GetAllClientCount())
 		}

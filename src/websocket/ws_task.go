@@ -4,6 +4,8 @@ import (
 	ws "github.com/gorilla/websocket"
 	"util"
 	"sync/atomic"
+	"time"
+	"common/logging"
 )
 
 type WsTask struct {
@@ -25,6 +27,8 @@ type WsTask struct {
 	unregister chan *WsTaskClient
 
 	clientCount int64
+
+	incr chan int64
 }
 
 func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
@@ -44,16 +48,23 @@ func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
 	client.task.register <- client
 	go client.readGoroutine()
 	go client.writeGoroutine()
+	client.Send([]byte(hiMesaage + "," + client.id)) //fixme 第一次连接发送，方便测试
 	return client
 }
 
 func (task *WsTask) Broadcast(msg []byte) {
-	for _, v := range task.clients.Map {
-		v.(*WsTaskClient).send <- msg
-	}
+	start := time.Now()
+	task.clients.Foreach(func(s string, i interface{}) {
+		i.(*WsTaskClient).send <- msg
+	})
+	end := time.Now()
+	logging.Debug("broadcast time cost %d second", end.Sub(start).Seconds())
 }
 func (task *WsTask) GetClientCount() int64 {
-	return task.clientCount
+	return atomic.LoadInt64(&task.clientCount)
+}
+func (task *WsTask) GetAppId() string {
+	return task.appId
 }
 
 func NewWsTask(appId string, manager *WsManager) *WsTask {
@@ -63,28 +74,31 @@ func NewWsTask(appId string, manager *WsManager) *WsTask {
 		//clients:      make(map[*WsTaskClient]bool),
 		clients: util.NewConcurrentMap(),
 		//clientsIndex: util.NewConcurrentMap(),
-		broadcast:  make(chan []byte),
-		register:   make(chan *WsTaskClient, 1000),
-		unregister: make(chan *WsTaskClient, 1000),
+		broadcast:  make(chan []byte, 10),
+		register:   make(chan *WsTaskClient, 2000),
+		unregister: make(chan *WsTaskClient, 2000),
+		incr:       make(chan int64, 2000),
 	}
 	manager.register <- task
 	go task.Run()
+	go task.statistic()
 	return task
 }
 
 func (task *WsTask) Run() {
+	defer func() {
+		recover()
+	}()
 	for {
 		select {
 		case client := <-task.register:
 			task.clients.Put(client.id, client)
-			atomic.AddInt64(&task.clientCount, 1)
-			atomic.AddInt64(&task.wsManager.ClientCount, 1)
+			task.incr <- 1
 		case client := <-task.unregister:
 			if tClient := task.clients.Get(client.id); tClient != nil {
 				task.clients.Del(client.id)
 				close(client.send)
-				atomic.AddInt64(&task.clientCount, -1)
-				atomic.AddInt64(&task.wsManager.ClientCount, -1)
+				task.incr <- -1
 			}
 		case message := <-task.broadcast:
 			task.clients.Foreach(func(k string, v interface{}) {
@@ -95,4 +109,21 @@ func (task *WsTask) Run() {
 }
 func (task *WsTask) GetClient(uid string) *WsTaskClient {
 	return task.clients.Get(uid).(*WsTaskClient)
+}
+func (task *WsTask) statistic() {
+	for {
+		select {
+		case in := <-task.incr:
+			intLen := len(task.incr)
+			for i := 0; i < intLen; i++ {
+				t := <-task.incr
+				in = in + t
+			}
+			count := atomic.AddInt64(&task.clientCount, in)
+			atomic.AddInt64(&task.wsManager.ClientCount, in)
+			if in < 0 && count == 0 {
+				atomic.AddInt64(&task.wsManager.TaskCount, in)
+			}
+		}
+	}
 }

@@ -32,6 +32,8 @@ const (
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
 
+	hiMesaage = "hi"
+
 	helloMessage = "hello"
 )
 
@@ -51,15 +53,17 @@ func (c *WsTaskClient) readGoroutine() {
 	c.conn.SetPingHandler(func(appData string) error { c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(pongWait)); return nil })
 	for {
 		_, message, err := c.conn.ReadMessage()
+
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		//logging.Debug("the msg type is %d", msgType)
 		c.send <- []byte(helloMessage)
+
 		//logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }
@@ -112,4 +116,7 @@ func (c *WsTaskClient) writeGoroutine() {
 
 func (c *WsTaskClient) Send(msg []byte) {
 	c.send <- msg
+}
+func isData(frameType int) bool {
+	return frameType == websocket.TextMessage || frameType == websocket.BinaryMessage
 }
