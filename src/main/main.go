@@ -4,10 +4,11 @@ import (
 	"common/logging"
 	"config"
 	"manager"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"syscall"
 	"statistics"
+	"syscall"
 )
 
 func main() {

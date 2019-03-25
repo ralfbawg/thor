@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"util"
 	websocket2 "websocket"
 	"io/ioutil"
 	"io"
@@ -71,6 +72,18 @@ func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	io.Copy(ioutil.Discard, r.Body)
 	r.Body.Close()
+	//logging.Debug("process api")
+}
+func (c *serverManager) DebugHandler(w http.ResponseWriter, r *http.Request) {
+	paths := strings.Split(r.RequestURI, "/")
+	if len(paths) < 3 {
+		url := "/debug/pprof/"
+		http.Redirect(w, r, url, http.StatusFound)
+		return
+	} else if strings.HasPrefix(paths[2], "mem") {
+		util.GetMemoryFile()
+	}
+
 	//logging.Debug("process api")
 }
 func handlerAdapter(w http.ResponseWriter, r *http.Request) {
