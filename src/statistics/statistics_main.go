@@ -32,8 +32,8 @@ func InitStatistics() {
 }
 
 func PrintStatistics() {
-	tickA := time.NewTicker(2 * time.Second)
-	tickB := time.NewTicker(1 * time.Second)
+	tickA := time.NewTicker(20 * time.Second)
+	tickB := time.NewTicker(10 * time.Second)
 	defer func() {
 		tickA.Stop()
 		tickB.Stop()
@@ -41,7 +41,7 @@ func PrintStatistics() {
 	for {
 		select {
 		case <-tickA.C:
-			logging.Debug("tasks count:%d", GetTaskCount())
+			logging.Info("tasks count:%d", GetTaskCount())
 			//manager := websocket.GetWsManager()
 			//taskMap := manager.GetTasks()
 			//taskMap.Foreach(func(s string, i interface{}) {
@@ -49,7 +49,7 @@ func PrintStatistics() {
 			//	logging.Debug("task value=%s", i.(*websocket.WsTask).GetAppId())
 			//})
 		case <-tickB.C:
-			logging.Debug("clients count:%d", GetAllClientCount())
+			logging.Info("clients count:%d", GetAllClientCount())
 		}
 	}
 }

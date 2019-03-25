@@ -26,7 +26,7 @@ func Debug(format string, values ...interface{}) {
 	switch currentLogLevel {
 	case debugLevel:
 		time_string := time.Now().Format("2006-01-02 15:04:05")
-		log_string := "[" + time_string + "] " + "INFO" + " " + fmt.Sprintf(format, values...)
+		log_string := "[" + time_string + "] " + "DEBUG" + " " + fmt.Sprintf(format, values...)
 		fmt.Println(log_string)
 	}
 }

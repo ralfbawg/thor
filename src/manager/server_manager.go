@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	websocket2 "websocket"
+	"io/ioutil"
+	"io"
 )
 
 const (
@@ -64,22 +66,11 @@ func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 		msg := r.URL.Query().Get("msg")
 		appId := r.URL.Query().Get("appId")
 		uid := r.URL.Query().Get("uid")
-		if appId != "" && uid != "" {
-			task := websocket2.GetWsManager().GetOrCreateTask(appId)
-			if client := task.GetClient(uid); client != nil {
-				client.Send([]byte(msg))
-			} else {
-				w.Write([]byte("the client(" + uid + ") is closed or not exist"))
-				return
-			}
-		} else if appId != "" {
-			websocket2.GetWsManager().Broadcast(appId, msg)
-		} else {
-			w.Write([]byte("parameter appId is empty or not exist"))
-			return
-		}
+		go broadcast(appId, uid, msg)
 		w.Write([]byte(SuccessMsg))
 	}
+	io.Copy(ioutil.Discard, r.Body)
+	r.Body.Close()
 	//logging.Debug("process api")
 }
 func handlerAdapter(w http.ResponseWriter, r *http.Request) {
@@ -93,5 +84,14 @@ func handlerAdapter(w http.ResponseWriter, r *http.Request) {
 	obj := reflect.ValueOf(serverM).MethodByName(actionStr)
 	if obj.IsValid() {
 		obj.Call([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
+	}
+}
+func broadcast(appId string, uid string, msg string) {
+	logging.Debug("param appid=%s,uid=%s", appId, uid)
+	if appId != "" && uid != "" {
+		task := websocket2.GetWsManager().GetOrCreateTask(appId)
+		task.GetClient(uid).Send([]byte(msg))
+	} else {
+		websocket2.GetWsManager().Broadcast(appId, msg)
 	}
 }

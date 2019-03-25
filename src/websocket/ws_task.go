@@ -4,8 +4,12 @@ import (
 	ws "github.com/gorilla/websocket"
 	"util"
 	"sync/atomic"
-	"time"
 	"common/logging"
+	"time"
+)
+
+const (
+	broadcast = 1000
 )
 
 type WsTask struct {
@@ -54,11 +58,20 @@ func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
 
 func (task *WsTask) Broadcast(msg []byte) {
 	start := time.Now()
-	task.clients.Foreach(func(s string, i interface{}) {
-		i.(*WsTaskClient).send <- msg
+	modInt := 0
+	if task.clientCount%broadcast > 0 {
+		modInt = 1
+	}
+	batchCount := task.clientCount/broadcast + int64(modInt)
+	timeTask(1*time.Second, int(batchCount), func(n int) {
+		task.clients.ForeachN(n*broadcast, broadcast, func(s string, i interface{}) {
+			if i != nil {
+				i.(*WsTaskClient).send <- msg
+			}
+		})
 	})
 	end := time.Now()
-	logging.Debug("broadcast time cost %d second", end.Sub(start).Seconds())
+	logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())
 }
 func (task *WsTask) GetClientCount() int64 {
 	return atomic.LoadInt64(&task.clientCount)
@@ -126,9 +139,33 @@ func (task *WsTask) statistic() {
 			count := atomic.AddInt64(&task.clientCount, in)
 			atomic.AddInt64(&task.wsManager.ClientCount, in)
 			if in < 0 && count <= 0 {
-				atomic.AddInt64(&task.wsManager.TaskCount, in)
-				manager.tasks.Del(task.appId)
+				if count < 0 {
+					atomic.AddInt64(&task.wsManager.TaskCount, int64(1-task.wsManager.TaskCount))
+				} else {
+					atomic.AddInt64(&task.wsManager.TaskCount, int64(1-task.wsManager.TaskCount))
+					manager.tasks.Del(task.appId)
+				}
+
 			}
 		}
 	}
+}
+
+//分批任务,
+// t 任务间隔
+//count 任务执行次数
+//f 任务本身
+func timeTask(t time.Duration, count int, f func(n int)) {
+	go func() {
+		tick := time.NewTicker(t)
+		initCount := 0
+		for range tick.C {
+			if initCount < count {
+				f(initCount)
+				initCount++
+			} else {
+				tick.Stop()
+			}
+		}
+	}()
 }

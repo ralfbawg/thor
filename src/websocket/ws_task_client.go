@@ -115,7 +115,10 @@ func (c *WsTaskClient) writeGoroutine() {
 }
 
 func (c *WsTaskClient) Send(msg []byte) {
-	c.send <- msg
+	if c != nil {
+		c.send <- msg
+	}
+
 }
 func isData(frameType int) bool {
 	return frameType == websocket.TextMessage || frameType == websocket.BinaryMessage

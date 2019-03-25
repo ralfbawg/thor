@@ -36,7 +36,8 @@ func (m *WsManager) Broadcast(appId string, msg string) {
 	if appId == "" {
 		m.totalBroadcast <- []byte(msg)
 	} else {
-		if task := m.tasks.Get(appId); task != nil {
+		task := m.tasks.Get(appId)
+		if task != nil {
 			task.(*WsTask).Broadcast([]byte(msg))
 		}
 	}
@@ -65,7 +66,7 @@ func WsManagerInit() {
 					i.(*WsTask).Broadcast(msg)
 				})
 				end := time.Now()
-				logging.Debug("broadcast time cost %d second", end.Sub(start).Seconds())
+				logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())
 			case task := <-manager.register:
 				manager.tasks.Put(task.appId, task)
 				atomic.AddInt64(&manager.TaskCount, 1)
