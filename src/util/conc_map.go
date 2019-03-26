@@ -6,7 +6,9 @@ import (
 )
 
 const (
-	SHARD_COUNT = 32
+	SHARD_COUNT            = 32
+	SHARD_DEFAULT_SIZE     = 1000
+	SHARD_DELETE_THROSHELD = 30
 )
 
 // A "thread" safe map of type string:Anything.
@@ -28,14 +30,14 @@ func NewByShardCount(shardCount int) ConcMap {
 	}
 	m := make(ConcMap, finalShardCount)
 	for i := 0; i < finalShardCount; i++ {
-		m[i] = &ConcurrentMapShared{items: make(map[string]interface{}, defaultMapSize)}
+		m[i] = &ConcurrentMapShared{items: make(map[string]interface{}, SHARD_DEFAULT_SIZE)}
 	}
 	return m
 }
 func New() ConcMap {
 	m := make(ConcMap, SHARD_COUNT)
 	for i := 0; i < SHARD_COUNT; i++ {
-		m[i] = &ConcurrentMapShared{items: make(map[string]interface{}, defaultMapSize)}
+		m[i] = &ConcurrentMapShared{items: make(map[string]interface{}, SHARD_DEFAULT_SIZE)}
 	}
 	return m
 }
@@ -134,7 +136,7 @@ func (m ConcMap) Remove(key string) {
 	shard.Lock()
 	delete(shard.items, key)
 	shard.deleteCount++
-	if shard.deleteCount > deletethreshold {
+	if shard.deleteCount > SHARD_DELETE_THROSHELD {
 		tmpA := make(map[string]interface{})
 		for k, v := range shard.items {
 			tmpA[k] = v
@@ -161,7 +163,7 @@ func (m ConcMap) RemoveCb(key string, cb RemoveCb) bool {
 	if remove && ok {
 		delete(shard.items, key)
 		shard.deleteCount++
-		if shard.deleteCount > deletethreshold {
+		if shard.deleteCount > SHARD_DELETE_THROSHELD {
 			tmpA := make(map[string]interface{})
 			for k, v := range shard.items {
 				tmpA[k] = v
