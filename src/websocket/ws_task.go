@@ -19,7 +19,7 @@ type WsTask struct {
 	// Registered clients.
 	//clients *util.ConcurrentMap
 
-	clients *util.ConcurrentMap
+	clients util.ConcMap
 
 	// Inbound messages from the clients.
 	broadcast chan []byte
@@ -36,7 +36,13 @@ type WsTask struct {
 }
 
 func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
-	if client := task.clients.Get(id); client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
+	if task==nil {
+		logging.Info("task is empty")
+	}
+	if task.clients==nil {
+		logging.Info("task clients is empty")
+	}
+	if client, ok := task.clients.Get(id); ok && client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
 		task.unregister <- client.(*WsTaskClient)
 		//task.clientsIndex[id].conn.Close()
 		//delete(task.clients, task.clientsIndex[id])
@@ -64,11 +70,16 @@ func (task *WsTask) Broadcast(msg []byte) {
 	}
 	batchCount := task.clientCount/broadcast + int64(modInt)
 	timeTask(1*time.Second, int(batchCount), func(n int) {
-		task.clients.ForeachN(n*broadcast, broadcast, func(s string, i interface{}) {
-			if i != nil {
-				i.(*WsTaskClient).send <- msg
+		task.clients.IterCb(func(key string, v interface{}) {
+			if v != nil {
+				v.(*WsTaskClient).send <- msg
 			}
 		})
+		//task.clients.ForeachN(n*broadcast, broadcast, func(s string, i interface{}) {
+		//	if i != nil {
+		//		i.(*WsTaskClient).send <- msg
+		//	}
+		//})
 	})
 	end := time.Now()
 	logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())
@@ -85,7 +96,7 @@ func NewWsTask(appId string, manager *WsManager) *WsTask {
 		appId:     appId,
 		wsManager: manager,
 		//clients:      make(map[*WsTaskClient]bool),
-		clients: util.NewConcurrentMap(),
+		clients: util.New(),
 		//clientsIndex: util.NewConcurrentMap(),
 		broadcast:  make(chan []byte, 10),
 		register:   make(chan *WsTaskClient, 2000),
@@ -105,23 +116,23 @@ func (task *WsTask) Run() {
 	for {
 		select {
 		case client := <-task.register:
-			task.clients.Put(client.id, client)
+			task.clients.Set(client.id, client)
 			task.incr <- 1
 		case client := <-task.unregister:
-			if tClient := task.clients.Get(client.id); tClient != nil {
-				task.clients.Del(client.id)
+			if tClient, ok := task.clients.Get(client.id); ok && tClient != nil {
+				task.clients.Remove(client.id)
 				close(client.send)
 				task.incr <- -1
 			}
 		case message := <-task.broadcast:
-			task.clients.Foreach(func(k string, v interface{}) {
+			task.clients.IterCb(func(k string, v interface{}) {
 				v.(*WsTaskClient).send <- message
 			})
 		}
 	}
 }
 func (task *WsTask) GetClient(uid string) *WsTaskClient {
-	if client := task.clients.Get(uid); client != nil {
+	if client, ok := task.clients.Get(uid); ok && client != nil {
 		return client.(*WsTaskClient)
 	} else {
 		return nil
@@ -143,7 +154,7 @@ func (task *WsTask) statistic() {
 					atomic.AddInt64(&task.wsManager.TaskCount, int64(1-task.wsManager.TaskCount))
 				} else {
 					atomic.AddInt64(&task.wsManager.TaskCount, int64(1-task.wsManager.TaskCount))
-					manager.tasks.Del(task.appId)
+					manager.tasks.Remove(task.appId)
 				}
 
 			}

@@ -36,15 +36,15 @@ func (m *WsManager) Broadcast(appId string, msg string) {
 	if appId == "" {
 		m.totalBroadcast <- []byte(msg)
 	} else {
-		task := m.tasks.Get(appId)
-		if task != nil {
+		task, ok := m.tasks.Get(appId)
+		if ok && task != nil {
 			task.(*WsTask).Broadcast([]byte(msg))
 		}
 	}
 }
 
 type WsManager struct {
-	tasks          *util.ConcurrentMap
+	tasks          util.ConcMap
 	totalBroadcast chan []byte
 	register       chan *WsTask
 	TaskCount      int64
@@ -53,8 +53,8 @@ type WsManager struct {
 
 func WsManagerInit() {
 	manager = &WsManager{
-		tasks:          util.NewConcurrentMap(),
-		totalBroadcast: make(chan []byte),
+		tasks:          util.New(),
+		totalBroadcast: make(chan []byte, 1024),
 		register:       make(chan *WsTask, 1000),
 	}
 	go func() {
@@ -62,13 +62,16 @@ func WsManagerInit() {
 			select {
 			case msg := <-manager.totalBroadcast:
 				start := time.Now()
-				manager.tasks.Foreach(func(k string, i interface{}) {
-					i.(*WsTask).Broadcast(msg)
+				manager.tasks.IterCb(func(key string, v interface{}) {
+					v.(*WsTask).Broadcast(msg)
 				})
+				//manager.tasks.Foreach(func(k string, i interface{}) {
+				//	i.(*WsTask).Broadcast(msg)
+				//})
 				end := time.Now()
 				logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())
 			case task := <-manager.register:
-				manager.tasks.Put(task.appId, task)
+				manager.tasks.Set(task.appId, task)
 				atomic.AddInt64(&manager.TaskCount, 1)
 			}
 		}
@@ -80,13 +83,13 @@ func WsManagerInit() {
 获取当前有多少任务
 */
 func (m *WsManager) GetSize() int64 {
-	return int64(len(m.tasks.Map))
+	return int64(m.tasks.Count())
 }
 
 /**
 获取当前有多少任务
 */
-func (m *WsManager) GetTasks() *util.ConcurrentMap {
+func (m *WsManager) GetTasks() util.ConcMap {
 	return m.tasks
 }
 
@@ -101,12 +104,13 @@ func (m *WsManager) GetTaskCount() int64 {
 获取或者新建一个task
  */
 func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
-
-	if m.tasks.Get(appId) == nil {
+	if tmp, ok := m.tasks.Get(appId); !ok || tmp == nil {
 		task := NewWsTask(appId, m)
-		m.tasks.Put(appId, task)
+		m.tasks.Set(appId, task)
+		return task
+	} else {
+		return tmp.(*WsTask)
 	}
-	return m.tasks.Get(appId).(*WsTask)
 }
 func (wsManager *WsManager) GetAllClientCount() int64 {
 	return atomic.LoadInt64(&wsManager.ClientCount)
