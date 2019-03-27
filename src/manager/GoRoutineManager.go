@@ -10,8 +10,8 @@ const (
 	RoutineSliceDefaultLen = 50000
 )
 
-var GoRoutineSlice = make([]GoRoutineItem, RoutineSliceDefaultLen, RoutineSliceDefaultCap)
-var GoRoutineMap = make(map[string]GoRoutineItem,RoutineSliceDefaultCap)
+//var GoRoutineSlice = make([]GoRoutineItem, RoutineSliceDefaultLen, RoutineSliceDefaultCap)
+//var GoRoutineMap = make(map[string]GoRoutineItem,RoutineSliceDefaultCap)
 
 //func AddGoFunc(f func()) {
 //	t := make(chan GoRoutineItem,1)

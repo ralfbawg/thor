@@ -36,10 +36,10 @@ type WsTask struct {
 }
 
 func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
-	if task==nil {
+	if task == nil {
 		logging.Info("task is empty")
 	}
-	if task.clients==nil {
+	if task.clients == nil {
 		logging.Info("task clients is empty")
 	}
 	if client, ok := task.clients.Get(id); ok && client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
@@ -75,11 +75,6 @@ func (task *WsTask) Broadcast(msg []byte) {
 				v.(*WsTaskClient).send <- msg
 			}
 		})
-		//task.clients.ForeachN(n*broadcast, broadcast, func(s string, i interface{}) {
-		//	if i != nil {
-		//		i.(*WsTaskClient).send <- msg
-		//	}
-		//})
 	})
 	end := time.Now()
 	logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())

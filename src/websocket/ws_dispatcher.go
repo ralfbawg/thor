@@ -28,6 +28,17 @@ var upgrade = websocket.Upgrader{
 	},
 }
 
+
+
+type WsManager struct {
+	tasks          util.ConcMap
+	totalBroadcast chan []byte
+	register       chan *WsTask
+	TaskCount      int64
+	ClientCount    int64
+	broadcastTokenPool []int
+}
+
 func GetWsManager() *WsManager {
 	return manager
 }
@@ -43,18 +54,10 @@ func (m *WsManager) Broadcast(appId string, msg string) {
 	}
 }
 
-type WsManager struct {
-	tasks          util.ConcMap
-	totalBroadcast chan []byte
-	register       chan *WsTask
-	TaskCount      int64
-	ClientCount    int64
-}
-
 func WsManagerInit() {
 	manager = &WsManager{
 		tasks:          util.New(),
-		totalBroadcast: make(chan []byte, 1024),
+		totalBroadcast: make(chan []byte, 10),
 		register:       make(chan *WsTask, 1000),
 	}
 	go func() {
@@ -148,4 +151,16 @@ func verifyAppInfo(param url.Values) (string, string, bool) {
 	//TODO 通过db查询确认
 	//return id, appKey != "fffasdfasdf" && id != "asdfasdfasd"
 	return appId, id, true
+}
+/*
+广播主入口
+ */
+func WsBroadcast(appId string, uid string, msg string) {
+	logging.Debug("param appid=%s,uid=%s", appId, uid)
+	if appId != "" && uid != "" {//单播
+		task := GetWsManager().GetOrCreateTask(appId)
+		task.GetClient(uid).Send([]byte(msg))
+	} else {
+		GetWsManager().Broadcast(appId, msg)
+	}
 }

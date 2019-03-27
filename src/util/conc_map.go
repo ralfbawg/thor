@@ -3,12 +3,15 @@ package util
 import (
 	"encoding/json"
 	"sync"
+	"common/logging"
+	"time"
 )
 
+var SHARD_COUNT = 1 << 5
+
 const (
-	SHARD_COUNT            = 32
 	SHARD_DEFAULT_SIZE     = 1000
-	SHARD_DELETE_THROSHELD = 30
+	SHARD_DELETE_THROSHELD = 10
 )
 
 // A "thread" safe map of type string:Anything.
@@ -18,7 +21,8 @@ type ConcMap []*ConcurrentMapShared
 // A "thread" safe string to anything map.
 type ConcurrentMapShared struct {
 	items       map[string]interface{}
-	deleteCount int
+	deleteCount int8
+	lastRebuild time.Time
 	sync.RWMutex // Read Write mutex, guards access to internal map.
 }
 
@@ -44,7 +48,7 @@ func New() ConcMap {
 
 // GetShard returns shard under given key
 func (m ConcMap) GetShard(key string) *ConcurrentMapShared {
-	return m[uint(fnv32(key))%uint(SHARD_COUNT)]
+	return m[uint(murmurHash(key))%uint(SHARD_COUNT)]
 }
 
 func (m ConcMap) MSet(data map[string]interface{}) {
@@ -136,13 +140,16 @@ func (m ConcMap) Remove(key string) {
 	shard.Lock()
 	delete(shard.items, key)
 	shard.deleteCount++
-	if shard.deleteCount > SHARD_DELETE_THROSHELD {
-		tmpA := make(map[string]interface{})
+	if (shard.lastRebuild.Sub(time.Now()) > 5*time.Second && shard.deleteCount > SHARD_DELETE_THROSHELD) || shard.deleteCount > SHARD_DELETE_THROSHELD*3 { //5秒间隔或者3倍压力时
+		logging.Info("start to rebuild map shard with deleteCount=%d", shard.deleteCount)
+		tmpA := make(map[string]interface{}, len(shard.items))
 		for k, v := range shard.items {
 			tmpA[k] = v
 		}
 		shard.items = nil
 		shard.items = tmpA
+		shard.lastRebuild = time.Now()
+		shard.deleteCount = 0
 	}
 	shard.Unlock()
 }
@@ -343,6 +350,61 @@ func fnv32(key string) uint32 {
 		hash *= prime32
 		hash ^= uint32(key[i])
 	}
+	return hash
+}
+
+const (
+	c1 = 0xcc9e2d51
+	c2 = 0x1b873593
+	c3 = 0x85ebca6b
+	c4 = 0xc2b2ae35
+	r1 = 15
+	r2 = 13
+	m  = 5
+	n  = 0xe6546b64
+)
+
+var (
+	Seed = uint32(1)
+)
+/*
+增加murmurhash，进一步加快吞吐
+ */
+func murmurHash(key string) uint32 {
+	hash := Seed
+	iByte := 0
+	for ; iByte+4 <= len(key); iByte += 4 {
+		k := uint32(key[iByte]) | uint32(key[iByte+1])<<8 | uint32(key[iByte+2])<<16 | uint32(key[iByte+3])<<24
+		k *= c1
+		k = (k << r1) | (k >> (32 - r1))
+		k *= c2
+		hash ^= k
+		hash = (hash << r2) | (hash >> (32 - r2))
+		hash = hash*m + n
+	}
+
+	var remainingBytes uint32
+	switch len(key) - iByte {
+	case 3:
+		remainingBytes += uint32(key[iByte+2]) << 16
+		fallthrough
+	case 2:
+		remainingBytes += uint32(key[iByte+1]) << 8
+		fallthrough
+	case 1:
+		remainingBytes += uint32(key[iByte])
+		remainingBytes *= c1
+		remainingBytes = (remainingBytes << r1) | (remainingBytes >> (32 - r1))
+		remainingBytes = remainingBytes * c2
+		hash ^= remainingBytes
+	}
+
+	hash ^= uint32(len(key))
+	hash ^= hash >> 16
+	hash *= c3
+	hash ^= hash >> 13
+	hash *= c4
+	hash ^= hash >> 16
 	return hash
 }
 

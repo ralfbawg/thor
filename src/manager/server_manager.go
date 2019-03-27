@@ -10,13 +10,12 @@ import (
 	"strings"
 	"util"
 	websocket2 "websocket"
-	"io/ioutil"
-	"io"
+	"api"
+	"runtime/debug"
 )
 
 const (
 	ActionSuffix = "Handler"
-	SuccessMsg   = "success"
 )
 
 var upgrade = websocket.Upgrader{
@@ -62,26 +61,22 @@ func (c *serverManager) WsHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
-	paths := strings.Split(r.RequestURI, "/")
-	if strings.HasPrefix(paths[2], "b") {
-		msg := r.URL.Query().Get("msg")
-		appId := r.URL.Query().Get("appId")
-		uid := r.URL.Query().Get("uid")
-		go broadcast(appId, uid, msg)
-		w.Write([]byte(SuccessMsg))
-	}
-	io.Copy(ioutil.Discard, r.Body)
-	r.Body.Close()
+	api.ApiDispatch(w, r)
+
 	//logging.Debug("process api")
 }
 func (c *serverManager) DebugHandler(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.RequestURI, "/")
-	if len(paths) < 3 {
+	token := r.URL.Query().Get("token")
+	if token != "" || len(paths) < 3 {
 		url := "/debug/pprof/"
 		http.Redirect(w, r, url, http.StatusFound)
 		return
 	} else if strings.HasPrefix(paths[2], "mem") {
 		util.GetMemoryFile()
+	} else if strings.HasPrefix(paths[2], "gc") {
+		logging.Info("开始GC")
+		debug.FreeOSMemory()
 	}
 
 	//logging.Debug("process api")
@@ -97,14 +92,5 @@ func handlerAdapter(w http.ResponseWriter, r *http.Request) {
 	obj := reflect.ValueOf(serverM).MethodByName(actionStr)
 	if obj.IsValid() {
 		obj.Call([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
-	}
-}
-func broadcast(appId string, uid string, msg string) {
-	logging.Debug("param appid=%s,uid=%s", appId, uid)
-	if appId != "" && uid != "" {
-		task := websocket2.GetWsManager().GetOrCreateTask(appId)
-		task.GetClient(uid).Send([]byte(msg))
-	} else {
-		websocket2.GetWsManager().Broadcast(appId, msg)
 	}
 }

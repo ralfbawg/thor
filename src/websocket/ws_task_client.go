@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
+	"common/logging"
 )
 
 type WsTaskClient struct {
@@ -44,6 +45,7 @@ var (
 
 func (c *WsTaskClient) readGoroutine() {
 	defer func() {
+		logging.Info("defer client id=%s", c.id)
 		c.task.unregister <- c
 		c.conn.Close()
 	}()
@@ -57,6 +59,7 @@ func (c *WsTaskClient) readGoroutine() {
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
+				logging.Info("error: %v", err)
 			}
 			break
 		}
