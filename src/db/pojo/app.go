@@ -7,7 +7,6 @@ type App struct {
 	Name string
 	Key string
 	ManagerUid string
-	Passwd string `xorm:"varchar(200)"`
 	Created time.Time `xorm:"created"`
 	Updated time.Time `xorm:"updated"`
 }

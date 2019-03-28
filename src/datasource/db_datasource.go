@@ -48,3 +48,13 @@ func getExtInfoByType(dbtype string) string {
 		return ""
 	}
 }
+
+func (db *DbDatasource) GetDatasourceName(dbtype string) (string, error) {
+	switch dbtype {
+	case "mysql":
+		return db.Username + ":" + db.Password + "@tcp(" + db.Url + ")/" + db.DbName + getExtInfoByType(db.DbType), nil
+	default:
+		return "", new(error)
+
+	}
+}
