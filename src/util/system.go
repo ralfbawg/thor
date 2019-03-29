@@ -14,3 +14,11 @@ func GetMemoryFile() {
 	pprof.WriteHeapProfile(fm)
 	fm.Close()
 }
+
+func AOrB(f func() bool, a interface{}, b interface{}) interface{} {
+	if f() {
+		return a
+	} else {
+		return b
+	}
+}
