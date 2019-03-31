@@ -21,10 +21,12 @@ type Configure struct {
 		ApiServicePath string `yaml:"apipath"`
 	}
 	Db struct {
-		Url      string `yaml:"url"`
+		Host      string `yaml:"host"`
+		Port   string `yaml:"port"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
-		Dbtype   string `yaml:"dbtype"`
+		DbType   string `yaml:"dbtype"`
+		DbName string `yaml:"dbname"`
 	}
 	inited bool
 }

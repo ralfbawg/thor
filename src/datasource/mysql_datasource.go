@@ -1,12 +1,16 @@
 package datasource
 
 type MysqlDatasource struct {
-	DbDatasource
+	*DbDatasource
 }
 
 func NewMysql(ip string, port string) *DbDatasource {
 	return &DbDatasource{
 		DbType: DBTYPE_MYSQL,
-		Url:    ip + ":" + port,
+		Host:   ip,
+		Port:   port,
 	}
+}
+func (mysql MysqlDatasource) getExtInfoByType() string {
+	return "?charset=utf8"
 }

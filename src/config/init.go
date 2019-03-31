@@ -2,17 +2,22 @@ package config
 
 import (
 	"common/logging"
+	"db"
 	"filter"
 	"websocket"
 	"monitor"
 )
 
 func InitMain() {
-	initConfigFile()
-	//db.InitDb()
-	monitor.MonitorInit()
-	filter.FilterInit()
-	websocket.WsManagerInit()
+	if c, error := initConfigFile(); error != nil {
+
+	} else {
+		db.InitDb(c.Db.Host, c.Db.Port, c.Db.DbName, c.Db.Username, c.Db.Password, c.Db.DbType)
+		monitor.MonitorInit()
+		filter.FilterInit()
+		websocket.WsManagerInit()
+	}
+
 }
 func initConfigFile() (*Configure, error) {
 	logging.Debug("init db start")

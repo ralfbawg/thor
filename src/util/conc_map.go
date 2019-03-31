@@ -38,7 +38,7 @@ func NewByShardCount(shardCount int) ConcMap {
 	}
 	return m
 }
-func New() ConcMap {
+func NewConcMap() ConcMap {
 	m := make(ConcMap, SHARD_COUNT)
 	for i := 0; i < SHARD_COUNT; i++ {
 		m[i] = &ConcurrentMapShared{items: make(map[string]interface{}, SHARD_DEFAULT_SIZE)}

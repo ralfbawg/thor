@@ -2,7 +2,7 @@ package pojo
 
 import "time"
 
-type App struct {
+type TblThorApp struct {
 	Id int64
 	Name string
 	Key string

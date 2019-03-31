@@ -1,20 +1,13 @@
 package websocket
 
 import (
+	"common/logging"
 	"github.com/gorilla/websocket"
 	"net/http"
-	"net/url"
-	"util/uuid"
-	"util"
-	"common/logging"
 	"sync/atomic"
+	"task"
 	"time"
-)
-
-const (
-	appIdParam  = "appId"
-	appKeyParam = "appKey"
-	uidParam    = "uid"
+	"util"
 )
 
 var manager *WsManager
@@ -28,14 +21,12 @@ var upgrade = websocket.Upgrader{
 	},
 }
 
-
-
 type WsManager struct {
-	tasks          util.ConcMap
-	totalBroadcast chan []byte
-	register       chan *WsTask
-	TaskCount      int64
-	ClientCount    int64
+	tasks              util.ConcMap
+	totalBroadcast     chan []byte
+	register           chan *WsTask
+	TaskCount          int64
+	ClientCount        int64
 	broadcastTokenPool []int
 }
 
@@ -56,7 +47,7 @@ func (m *WsManager) Broadcast(appId string, msg string) {
 
 func WsManagerInit() {
 	manager = &WsManager{
-		tasks:          util.New(),
+		tasks:          util.NewConcMap(),
 		totalBroadcast: make(chan []byte, 10),
 		register:       make(chan *WsTask, 1000),
 	}
@@ -105,7 +96,7 @@ func (m *WsManager) GetTaskCount() int64 {
 
 /**
 获取或者新建一个task
- */
+*/
 func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
 	if tmp, ok := m.tasks.Get(appId); !ok || tmp == nil {
 		task := NewWsTask(appId, m)
@@ -124,7 +115,7 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 	//filter.DoFilter(w, r)
 	param := r.URL.Query()
 	//logging.Debug(param.Get("appId"))
-	if appId, id, exist := verifyAppInfo(param); exist == true {
+	if appId, id, exist := task.VerifyAppInfo(param); exist == true {
 		if conn, err := upgrade.Upgrade(w, r, nil); err != nil {
 			logging.Error("哦活,error:%s", err)
 		} else {
@@ -138,26 +129,11 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
- 验证app信息
-*/
-func verifyAppInfo(param url.Values) (string, string, bool) {
-	appId := param.Get(appIdParam)
-	//appKey := param.Get(appKeyParam)
-	id := param.Get(uidParam)
-	if id == "" {
-		id = uuid.Generate().String()
-	}
-	//logging.Debug("app id is %s,app key is %s,uid is %s", appId, appKey, id)
-	//TODO 通过db查询确认
-	//return id, appKey != "fffasdfasdf" && id != "asdfasdfasd"
-	return appId, id, true
-}
-/*
 广播主入口
- */
+*/
 func WsBroadcast(appId string, uid string, msg string) {
 	logging.Debug("param appid=%s,uid=%s", appId, uid)
-	if appId != "" && uid != "" {//单播
+	if appId != "" && uid != "" { //单播
 		task := GetWsManager().GetOrCreateTask(appId)
 		task.GetClient(uid).Send([]byte(msg))
 	} else {

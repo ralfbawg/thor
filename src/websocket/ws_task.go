@@ -91,7 +91,7 @@ func NewWsTask(appId string, manager *WsManager) *WsTask {
 		appId:     appId,
 		wsManager: manager,
 		//clients:      make(map[*WsTaskClient]bool),
-		clients: util.New(),
+		clients: util.NewConcMap(),
 		//clientsIndex: util.NewConcurrentMap(),
 		broadcast:  make(chan []byte, 10),
 		register:   make(chan *WsTaskClient, 2000),

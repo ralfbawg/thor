@@ -12,3 +12,10 @@ type NosqlDatasource struct {
 	BaseDataSource
 }
 
+func (nosql *NosqlDatasource) Init() {
+
+}
+
+func (nosql *NosqlDatasource) GetData(param interface{}) interface{} {
+	return nil
+}

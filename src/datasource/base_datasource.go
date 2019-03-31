@@ -6,22 +6,22 @@ import (
 )
 
 type DataSourceI interface {
-	getData(id string) interface{}
-	init() interface{}
+	GGetData(param ...string) interface{}
+	Init() interface{}
 }
 type BaseDataSource struct {
 	initFlag bool
-	pool sync.Pool
+	pool     sync.Pool
 	poolFlag bool
 	DataSourceI
 }
 
-func (d *BaseDataSource) init() {
+func (d *BaseDataSource) Init() {
 	d.initFlag = true
 	logging.Debug("default init")
 }
 
-func (d *BaseDataSource) getData(id string) interface{} {
+func (d *BaseDataSource) GetData(param ...string) interface{} {
 	logging.Debug("test")
 	return "test"
 }

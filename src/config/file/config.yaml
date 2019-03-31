@@ -8,8 +8,11 @@ server:
   wspath: /ws
   apipath: /api
 db:
-  url: jdbc://127.0.0.1:3306/test
-  username: test
-  password: test
+#  url: jdbc://127.0.0.1:3306/test
+  host: 192.168.134.129
+  port: 3306
+  dbname: thor
+  username: thor
+  password: thor
   dbtype: mysql
 

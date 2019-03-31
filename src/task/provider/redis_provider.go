@@ -16,4 +16,5 @@ func (redis *RedisProvider) GetData(key interface{}) (interface{}, error) {
 	if value.Kind() != reflect.String {
 		return nil, errors.New("gob: attempt to decode into a non-pointer")
 	}
+	return nil, nil
 }
