@@ -12,6 +12,7 @@ import (
 	websocket2 "websocket"
 	"api"
 	"runtime/debug"
+	"game"
 )
 
 const (
@@ -64,6 +65,10 @@ func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 	api.ApiDispatch(w, r)
 
 	//logging.Debug("process api")
+}
+//游戏分发
+func (c *serverManager) GameHandler(w http.ResponseWriter, r *http.Request) {
+	game.GameDispatch(w, r)
 }
 func (c *serverManager) DebugHandler(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.RequestURI, "/")

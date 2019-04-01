@@ -10,6 +10,7 @@ const (
 	RoutineSliceDefaultLen = 50000
 )
 
+//var GoroutinePool,_ = ants.NewPool(10000)
 //var GoRoutineSlice = make([]GoRoutineItem, RoutineSliceDefaultLen, RoutineSliceDefaultCap)
 //var GoRoutineMap = make(map[string]GoRoutineItem,RoutineSliceDefaultCap)
 

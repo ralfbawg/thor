@@ -39,13 +39,13 @@ const (
 )
 
 var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
+	newline          = []byte{'\n'}
+	space            = []byte{' '}
 )
 
 func (c *WsTaskClient) readGoroutine() {
 	defer func() {
-		logging.Info("defer client id=%s", c.id)
+		logging.Debug("defer client id=%s", c.id)
 		c.task.unregister <- c
 		c.conn.Close()
 	}()

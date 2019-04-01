@@ -2,7 +2,6 @@ package config
 
 import (
 	"common/logging"
-	"db"
 	"filter"
 	"websocket"
 	"monitor"
@@ -12,7 +11,8 @@ func InitMain() {
 	if c, error := initConfigFile(); error != nil {
 
 	} else {
-		db.InitDb(c.Db.Host, c.Db.Port, c.Db.DbName, c.Db.Username, c.Db.Password, c.Db.DbType)
+		logging.Debug("db hots:%s", c.Db.Host)
+		//db.InitDb(c.Db.Host, c.Db.Port, c.Db.DbName, c.Db.Username, c.Db.Password, c.Db.DbType)
 		monitor.MonitorInit()
 		filter.FilterInit()
 		websocket.WsManagerInit()

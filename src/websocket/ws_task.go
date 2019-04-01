@@ -6,10 +6,18 @@ import (
 	"sync/atomic"
 	"common/logging"
 	"time"
+	"github.com/panjf2000/ants"
 )
 
 const (
-	broadcast = 1000
+	broadcastBatchNum = 2
+)
+
+var (
+	wrPoolExtendFactor = 0.8
+	wrPoolDefaultSize  = 10000
+	wrPool, _          = ants.NewPool(wrPoolDefaultSize)
+	funcs              = make([]func(), 0)
 )
 
 type WsTask struct {
@@ -56,25 +64,40 @@ func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
 		send: make(chan []byte, 10),
 	}
 	client.task.register <- client
-	go client.readGoroutine()
-	go client.writeGoroutine()
+
+	submitTaskAndResize(wrPool, append(funcs[:0], client.readGoroutine, client.writeGoroutine))
+	//wrPool.Submit(client.readGoroutine)
+	//go client.readGoroutine()
+	//go client.writeGoroutine()
 	client.Send([]byte(hiMesaage + "," + client.id)) //fixme 第一次连接发送，方便测试
 	return client
 }
 
 func (task *WsTask) Broadcast(msg []byte) {
 	start := time.Now()
-	modInt := 0
-	if task.clientCount%broadcast > 0 {
-		modInt = 1
-	}
-	batchCount := task.clientCount/broadcast + int64(modInt)
-	timeTask(1*time.Second, int(batchCount), func(n int) {
-		task.clients.IterCb(func(key string, v interface{}) {
-			if v != nil {
-				v.(*WsTaskClient).send <- msg
-			}
-		})
+	//modInt := 0
+	//if task.clientCount%broadcastBatchNum > 0 {
+	//	modInt = 1
+	//}
+	//batchCount := task.clientCount/broadcastBatchNum + int64(modInt)
+	//timeTask(1*time.Second, int(batchCount), func(param ...interface{}) { //FIXME 需要解决map的乱序问题
+	//	n := param[0].(int64)
+	//	tmpCount := 0
+	//	task.clients.Keys()
+	//	task.clients.IterCb(func(key string, v interface{}) {
+	//		if tmpCount < (n-1*(broadcastBatchNum)) || tmpCount >= int(n*broadcastBatchNum) {
+	//			return
+	//		}
+	//		if v != nil {
+	//			v.(*WsTaskClient).send <- msg
+	//		}
+	//		tmpCount++
+	//	})
+	//})
+	task.clients.IterCb(func(key string, v interface{}) {
+		if v != nil {
+			v.(*WsTaskClient).send <- msg
+		}
 	})
 	end := time.Now()
 	logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())
@@ -85,6 +108,10 @@ func (task *WsTask) GetClientCount() int64 {
 func (task *WsTask) GetAppId() string {
 	return task.appId
 }
+func (task *WsTask) Init() string {
+	return task.appId
+}
+
 
 func NewWsTask(appId string, manager *WsManager) *WsTask {
 	task := &WsTask{
@@ -161,17 +188,27 @@ func (task *WsTask) statistic() {
 // t 任务间隔
 //count 任务执行次数
 //f 任务本身
-func timeTask(t time.Duration, count int, f func(n int)) {
+func timeTask(t time.Duration, count int, f func(param ...interface{})) {
 	go func() {
 		tick := time.NewTicker(t)
 		initCount := 0
 		for range tick.C {
 			if initCount < count {
-				f(initCount)
+				f([...]interface{}{initCount})
 				initCount++
 			} else {
 				tick.Stop()
 			}
 		}
 	}()
+}
+
+func submitTaskAndResize(pool *ants.Pool, f []func()) {
+	if float64(pool.Running())/float64(wrPoolDefaultSize) > wrPoolExtendFactor {
+		wrPoolDefaultSize *= 2
+		pool.Tune(wrPoolDefaultSize)
+	}
+	for _, v := range f {
+		pool.Submit(v)
+	}
 }

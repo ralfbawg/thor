@@ -43,6 +43,12 @@
 			"revisionTime": "2018-03-05T03:04:58Z"
 		},
 		{
+			"checksumSHA1": "t3qqlgMecxGy1yXXvTdRicJCgN4=",
+			"path": "github.com/panjf2000/ants",
+			"revision": "4ae3fb8dc413492862469027bb58cb45b77338f1",
+			"revisionTime": "2019-02-22T16:46:49Z"
+		},
+		{
 			"path": "go-sql-driver/mysql",
 			"revision": ""
 		},

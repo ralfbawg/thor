@@ -10,8 +10,8 @@ import (
 var SHARD_COUNT = 1 << 5
 
 const (
-	SHARD_DEFAULT_SIZE     = 1000
-	SHARD_DELETE_THROSHELD = 10
+	SHARD_DEFAULT_SIZE           = 1000
+	SHARD_DELETE_THROSHELD uint8 = 80
 )
 
 // A "thread" safe map of type string:Anything.
@@ -21,7 +21,7 @@ type ConcMap []*ConcurrentMapShared
 // A "thread" safe string to anything map.
 type ConcurrentMapShared struct {
 	items       map[string]interface{}
-	deleteCount int8
+	deleteCount uint8
 	lastRebuild time.Time
 	sync.RWMutex // Read Write mutex, guards access to internal map.
 }
@@ -141,7 +141,7 @@ func (m ConcMap) Remove(key string) {
 	delete(shard.items, key)
 	shard.deleteCount++
 	if (shard.lastRebuild.Sub(time.Now()) > 5*time.Second && shard.deleteCount > SHARD_DELETE_THROSHELD) || shard.deleteCount > SHARD_DELETE_THROSHELD*3 { //5秒间隔或者3倍压力时
-		logging.Info("start to rebuild map shard with deleteCount=%d", shard.deleteCount)
+		logging.Debug("start to rebuild map shard with deleteCount=%d", shard.deleteCount)
 		tmpA := make(map[string]interface{}, len(shard.items))
 		for k, v := range shard.items {
 			tmpA[k] = v
