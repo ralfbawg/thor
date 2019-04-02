@@ -1,16 +1,24 @@
 package game
 
 import (
-	"common/logging"
-	"errors"
 	ws "github.com/gorilla/websocket"
 	"net/http"
 	"sync/atomic"
 	"time"
+	"common/logging"
+	"github.com/panjf2000/ants"
+)
+
+const (
+	GAME_STATUS_PREPARE = iota
+	GAME_STATUS_READY
+	GAME_STATUS_RUNNING
+	GAME_STATUS_FINISH
+	GAME_STATUS_EMPTY
 )
 
 var (
-	gameRoomsArr = make([]uint32, 100)
+	GameRoomsArr = make([]uint32, 100000)
 	posArr       = [...]uint32{
 		1 << 31,
 		1 << 30,
@@ -55,19 +63,26 @@ var (
 	GameRoomsInst = func() GameRooms {
 		return NewGameRooms()
 	}()
+	uintfullArr = [...]uint32{uint32(65535), uint32(255), uint32(15), uint32(3), uint32(1)}
 )
 
 type GameRoom struct {
-	clientA     *GameClient
-	clientB     *GameClient
-	broadcast   chan []byte
-	npc         func(clientA *GameClient, clientB *GameClient)
-	gameRunning bool
-	gameStart   time.Duration
-	unregister  chan *GameClient
+	clientA    *GameClient
+	clientB    *GameClient
+	broadcast  chan []byte
+	npc        func(clientA *GameClient, clientB *GameClient, running bool)
+	running    bool
+	start      time.Duration
+	unregister chan *GameClient
+	ready      chan bool
+	status     int8
+	statusC    chan int8
 }
 
 func (gr *GameRoom) AddClient(client *GameClient) bool {
+	if gr.running {
+		return false
+	}
 	if gr.clientA == nil {
 		gr.clientA = client
 		return true
@@ -77,6 +92,39 @@ func (gr *GameRoom) AddClient(client *GameClient) bool {
 	}
 	return false
 }
+func (gr *GameRoom) Run() {
+	for {
+		select {
+		case <-gr.ready:
+			ants.Submit(gr.RunGame)
+			close(gr.ready)
+			break
+		}
+	}
+	for {
+		select {
+		case msg := <-gr.broadcast:
+			gr.clientA.Send(msg)
+			gr.clientB.Send(msg)
+		}
+	}
+}
+func (gr *GameRoom) RunGame() {
+	for {
+		select {
+		case <-gr.ready:
+			gr.clientA.Send(msg)
+			gr.clientB.Send(msg)
+		}
+	}
+	for {
+		select {
+		case msg := <-gr.broadcast:
+			gr.clientA.Send(msg)
+			gr.clientB.Send(msg)
+		}
+	}
+}
 
 type GameRooms []*GameRoom
 
@@ -84,15 +132,11 @@ func NewGameRooms() GameRooms {
 	tmp := make(GameRooms, 1000)
 	for i := 0; i < 1000; i++ {
 		tmp[i] = &GameRoom{
-			broadcast: make(chan []byte),
-			//npc: func(clientA *GameClient, clientB *GameClient) {
-			//	if clientA != nil && clientB! = nil && gameRunning{
-			//
-			//	}
-			//},
+			broadcast: make(chan []byte, 10),
+			npc: func(clientA *GameClient, clientB *GameClient, running bool) {
+			},
 		}
 	}
-	GameRoomsInst = tmp
 	return tmp
 }
 
@@ -100,16 +144,17 @@ func GameDispatch(w http.ResponseWriter, r *http.Request) {
 	//param := r.URL.Query()
 	//logging.Debug(param.Get("appId"))
 
-	if conn, err := upgrader.Upgrade(w, r, nil); err != nil {
-		logging.Error("哦活,error:%s", err)
-	} else {
-		//task := manager.GetOrCreateTask(appId)
-		//task.AddClient(id, conn)
-	}
+	//if conn, err := upgrader.Upgrade(w, r, nil); err != nil {
+	//	logging.Error("哦活,error:%s", err)
+	//} else {
+	//	//task := manager.GetOrCreateTask(appId)
+	//	//task.AddClient(id, conn)
+	//}
 
 }
 
-func CreateOrGetGameRoom() (*GameRoom, error) {
+func
+CreateOrGetGameRoom() (*GameRoom, error) {
 	if id, err := CreateOrGetGameRoomId(); err != nil {
 		return nil, err
 	} else {
@@ -117,26 +162,67 @@ func CreateOrGetGameRoom() (*GameRoom, error) {
 	}
 }
 
-func CreateOrGetGameRoomId() (int, error) {
-	for i := 0; i < len(gameRoomsArr); i++ {
-		j := gameRoomsArr[i]
-		for m := 0; m < len(posArr); m = m + 2 {
-			n := posArr[m]
-			o := posArr[m+1]
-			if j&n != n {
-				tmp := j ^ n
-				if atomic.CompareAndSwapUint32(&j, j, tmp) {
-					return (i*32 + m + 1) / 2, nil
-				}
-				break
-			} else if j&o != o {
-				tmp := j ^ o
-				if atomic.CompareAndSwapUint32(&j, j, tmp) {
-					return (i*32 + m + 1 + 1) / 2, nil
-				}
-				break
+func
+CreateOrGetGameRoomId() (int, error) {
+	for i := 0; i < len(GameRoomsArr); i++ {
+		for j := atomic.LoadUint32(&GameRoomsArr[i]); j < ^uint32(0); {
+			if n, b := findRoomByBinarySearch(&GameRoomsArr[i], j, 0, 32, 0); b {
+				return n + i*16, nil
 			}
 		}
+		//gameRoomNo := int(findRoomByBinarySearch(j, 0, 32, 0))
+
+		//for m := 0; m < len(posArr); m = m + 2 { //todo 顺序查找,未来估计要改成二分查找
+		//	n := posArr[m]
+		//	o := posArr[m+1]
+		//	if j&n != n {
+		//		tmp := j ^ n
+		//		if atomic.CompareAndSwapUint32(&j, j, tmp) {
+		//			return (i*32 + m + 1) / 2, nil
+		//		}
+		//		break
+		//	} else if j&o != o {
+		//		tmp := j ^ o
+		//		if atomic.CompareAndSwapUint32(&j, j, tmp) {
+		//			return (i*32 + m + 1 + 1) / 2, nil
+		//		}
+		//		break
+		//	}
+		//}
 	}
-	return 0, errors.New("满了")
+	logging.Debug("我没有找到房间")
+	return CreateOrGetGameRoomId()
+	//return 0, errors.New("满了")
+}
+
+func findRoomByBinarySearch(ptr *uint32, p uint32, start uint32, end uint32, uintArrIndex int) (int, bool) {
+	tValue := atomic.LoadUint32(ptr)
+	if p == ^uint32(0) { //满了
+		return -1, false
+	}
+	if end-start <= 1 {
+		gameRoomNo := (start+1)/2 + (start+1)%2
+		n := posArr[start]
+		tmp := tValue ^ n
+		return int(gameRoomNo), atomic.CompareAndSwapUint32(ptr, tValue, tmp)
+	}
+	offset := (end - start) / 2
+	tmp := uintfullArr[uintArrIndex]
+	if tmp&(p>>(offset+(32-end))) < tmp {
+		return findRoomByBinarySearch(ptr, p, start, end-offset, uintArrIndex+1) //左,会右移，低位不需要置零
+	} else {
+		return findRoomByBinarySearch(ptr, p&(^(tmp << (offset + 32 - end))), start+offset, end, uintArrIndex+1) //右，高位需要置零
+	}
+
+}
+func
+FindNotEmptyRoom() {
+	for k, v := range GameRoomsArr {
+		//if (v != ^uint32(0) && v != 0) || (k%8 == 0 && v != 0) {
+		//	logging.Info("the room(%d) is not full,value=%d", k+1, v)
+		//}
+		if (v != ^uint32(0) && v != 0) {
+			logging.Info("the room(%d) is not full,value=%d", k+1, v)
+		}
+	}
 }

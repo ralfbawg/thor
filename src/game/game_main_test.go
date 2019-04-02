@@ -1,29 +1,17 @@
-package main
+package game
 
 import (
-	_ "net/http/pprof"
-	"game"
 	"time"
 	"common/logging"
 	"os"
-	"sync"
 )
 
-var tmpMap sync.Map
-
-func main() {
-	//config.InitMain()
-	//logging.Debug("server start")
-	//manager.StartServers()
-	//statistics.PrintStatistics()
-	//ChanShutdown := make(chan os.Signal)
-	//signal.Ignore(syscall.SIGHUP)
-	//<-ChanShutdown
+func GameTest() {
 	a := make(chan []byte, 2)
 	start := time.Now()
 	go func() {
 		for i := 0; i < 10000; i++ {
-			id, _ := game.CreateOrGetGameRoomId()
+			id, _ := CreateOrGetGameRoomId()
 			logging.Info("a enter room %d", id)
 			//time.Sleep(10 * time.Microsecond)
 		}
@@ -31,7 +19,7 @@ func main() {
 	}()
 	go func() {
 		for i := 0; i < 10000; i++ {
-			id, _ := game.CreateOrGetGameRoomId()
+			id, _ := CreateOrGetGameRoomId()
 			logging.Info("b enter room %d", id)
 			//time.Sleep(10 * time.Microsecond)
 		}
@@ -46,10 +34,9 @@ func main() {
 			if count >= 2 {
 				end := time.Now()
 				logging.Info("total cost time:%s", end.Sub(start).String())
-				game.FindNotEmptyRoom()
+				FindNotEmptyRoom()
 				os.Exit(0)
 			}
 		}
 	}
-
 }
