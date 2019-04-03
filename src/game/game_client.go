@@ -17,6 +17,8 @@ type GameClient struct {
 	// Buffered channel of outbound messages.
 	send chan []byte
 
+	read chan []byte
+
 	id string
 }
 
@@ -32,12 +34,11 @@ const (
 
 	// Maximum message size allowed from peer.
 	maxMessageSize = 512
-
 )
 
 var (
-	newline          = []byte{'\n'}
-	space            = []byte{' '}
+	newline = []byte{'\n'}
+	space   = []byte{' '}
 )
 
 func (c *GameClient) readGoroutine() {

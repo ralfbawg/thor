@@ -7,6 +7,7 @@ import (
 	"time"
 	"common/logging"
 	"github.com/panjf2000/ants"
+	"strconv"
 )
 
 const (
@@ -15,43 +16,13 @@ const (
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
 	GAME_STATUS_EMPTY
+	GAME_STATUS         = iota
 )
 
 var (
 	GameRoomsArr = make([]uint32, 100000)
-	posArr       = [...]uint32{
-		1 << 31,
-		1 << 30,
-		1 << 29,
-		1 << 28,
-		1 << 27,
-		1 << 26,
-		1 << 25,
-		1 << 24,
-		1 << 23,
-		1 << 22,
-		1 << 21,
-		1 << 20,
-		1 << 19,
-		1 << 18,
-		1 << 17,
-		1 << 16,
-		1 << 15,
-		1 << 14,
-		1 << 13,
-		1 << 12,
-		1 << 11,
-		1 << 10,
-		1 << 9,
-		1 << 8,
-		1 << 7,
-		1 << 6,
-		1 << 5,
-		1 << 4,
-		1 << 3,
-		1 << 2,
-		1 << 1,
-		1}
+	//32的异或数组，从高位开始
+	posArr   = [...]uint32{1 << 31, 1 << 30, 1 << 29, 1 << 28, 1 << 27, 1 << 26, 1 << 25, 1 << 24, 1 << 23, 1 << 22, 1 << 21, 1 << 20, 1 << 19, 1 << 18, 1 << 17, 1 << 16, 1 << 15, 1 << 14, 1 << 13, 1 << 12, 1 << 11, 1 << 10, 1 << 9, 1 << 8, 1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1}
 	upgrader = ws.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -69,18 +40,17 @@ var (
 type GameRoom struct {
 	clientA    *GameClient
 	clientB    *GameClient
+	obs        []*GameClient
 	broadcast  chan []byte
 	npc        func(clientA *GameClient, clientB *GameClient, running bool)
-	running    bool
-	start      time.Duration
 	unregister chan *GameClient
-	ready      chan bool
 	status     int8
+	gameStatus int8
 	statusC    chan int8
 }
 
 func (gr *GameRoom) AddClient(client *GameClient) bool {
-	if gr.running {
+	if gr.status != GAME_STATUS_PREPARE {
 		return false
 	}
 	if gr.clientA == nil {
@@ -95,26 +65,23 @@ func (gr *GameRoom) AddClient(client *GameClient) bool {
 func (gr *GameRoom) Run() {
 	for {
 		select {
-		case <-gr.ready:
+		case s := <-gr.statusC:
+			switch s {
+			case GAME_STATUS_READY:
+				gr.start = (time.Now().Add(5 * time.Second))
+			}
 			ants.Submit(gr.RunGame)
-			close(gr.ready)
 			break
 		}
 	}
-	for {
-		select {
-		case msg := <-gr.broadcast:
-			gr.clientA.Send(msg)
-			gr.clientB.Send(msg)
-		}
-	}
+
 }
 func (gr *GameRoom) RunGame() {
+
 	for {
 		select {
 		case <-gr.ready:
-			gr.clientA.Send(msg)
-			gr.clientB.Send(msg)
+
 		}
 	}
 	for {
@@ -225,4 +192,45 @@ FindNotEmptyRoom() {
 			logging.Info("the room(%d) is not full,value=%d", k+1, v)
 		}
 	}
+}
+
+type Game struct {
+	gr      *GameRoom
+	statusC chan int8
+	start   time.Duration
+	bloodA  int8
+	bloodB  int8
+	clientA *GameClient
+	clientB *GameClient
+}
+
+func (g *Game) Run() {
+	ALastHit := time.Now()
+	npcLast := time.Now()
+	BLastHit := time.Now()
+	for {
+		select {
+		case status := <-g.statusC:
+
+		case rmsg := <-g.clientA.read:
+			switch string(rmsg) {
+			case EA:
+				if time.Now().Sub(npcLast) > 5*time.Second {
+
+				}
+			}
+
+
+		case rmsg := <-g.clientB.read:
+			switch string(rmsg) {
+			case EA:
+				if time.Now().Sub(npcLast) > 5*time.Second {
+					g.gr.broadcast <- []byte(OB2 + "A")
+				} else {
+					g.gr.broadcast <- []byte(OB2 + "B")
+				}
+			}
+		}
+	}
+
 }
