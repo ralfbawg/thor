@@ -7,7 +7,6 @@ import (
 	"time"
 	"common/logging"
 	"github.com/panjf2000/ants"
-	"strconv"
 )
 
 const (
@@ -16,11 +15,11 @@ const (
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
 	GAME_STATUS_EMPTY
-	GAME_STATUS         = iota
+	GAME_STATUS = iota
 )
 
 var (
-	GameRoomsArr = make([]uint32, 100000)
+	GameRoomsArr = make([]uint32, 1000)
 	//32的异或数组，从高位开始
 	posArr   = [...]uint32{1 << 31, 1 << 30, 1 << 29, 1 << 28, 1 << 27, 1 << 26, 1 << 25, 1 << 24, 1 << 23, 1 << 22, 1 << 21, 1 << 20, 1 << 19, 1 << 18, 1 << 17, 1 << 16, 1 << 15, 1 << 14, 1 << 13, 1 << 12, 1 << 11, 1 << 10, 1 << 9, 1 << 8, 1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1}
 	upgrader = ws.Upgrader{
@@ -55,9 +54,13 @@ func (gr *GameRoom) AddClient(client *GameClient) bool {
 	}
 	if gr.clientA == nil {
 		gr.clientA = client
-		return true
+		client.id = "A"
 	} else if gr.clientB != nil {
 		gr.clientB = client
+		client.id = "B"
+	}
+	if gr.clientA != nil && gr.clientB != nil {
+		gr.statusC <- GAME_STATUS_READY
 		return true
 	}
 	return false
@@ -100,6 +103,8 @@ func NewGameRooms() GameRooms {
 	for i := 0; i < 1000; i++ {
 		tmp[i] = &GameRoom{
 			broadcast: make(chan []byte, 10),
+			status:    GAME_STATUS_PREPARE,
+			statusC:   make(chan int8, 2),
 			npc: func(clientA *GameClient, clientB *GameClient, running bool) {
 			},
 		}
@@ -111,17 +116,37 @@ func GameDispatch(w http.ResponseWriter, r *http.Request) {
 	//param := r.URL.Query()
 	//logging.Debug(param.Get("appId"))
 
-	//if conn, err := upgrader.Upgrade(w, r, nil); err != nil {
-	//	logging.Error("哦活,error:%s", err)
-	//} else {
-	//	//task := manager.GetOrCreateTask(appId)
-	//	//task.AddClient(id, conn)
-	//}
+	if conn, err := upgrader.Upgrade(w, r, nil); err != nil {
+		logging.Error("哦活,error:%s", err)
+		conn.Close()
+	} else {
+
+		if room, err := CreateOrGetGameRoom(); err == nil {
+			client := &GameClient{
+				gameRoom: room,
+				conn:     conn,
+				send:     make(chan []byte),
+				read:     make(chan []byte),
+			}
+			if room.AddClient(client) {
+				ants.Submit(client.writeGoroutine)
+				ants.Submit(client.readGoroutine)
+
+			} else {
+				w, err := conn.NextWriter(ws.TextMessage)
+				if err != nil {
+					w.Write([]byte("房间满了"))
+				}
+			}
+		} else {
+
+		}
+
+	}
 
 }
 
-func
-CreateOrGetGameRoom() (*GameRoom, error) {
+func CreateOrGetGameRoom() (*GameRoom, error) {
 	if id, err := CreateOrGetGameRoomId(); err != nil {
 		return nil, err
 	} else {
@@ -129,8 +154,7 @@ CreateOrGetGameRoom() (*GameRoom, error) {
 	}
 }
 
-func
-CreateOrGetGameRoomId() (int, error) {
+func CreateOrGetGameRoomId() (int, error) {
 	for i := 0; i < len(GameRoomsArr); i++ {
 		for j := atomic.LoadUint32(&GameRoomsArr[i]); j < ^uint32(0); {
 			if n, b := findRoomByBinarySearch(&GameRoomsArr[i], j, 0, 32, 0); b {

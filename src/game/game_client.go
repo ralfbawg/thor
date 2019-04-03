@@ -2,10 +2,9 @@ package game
 
 import (
 	"bytes"
-	"github.com/gorilla/websocket"
-	"log"
-	"time"
 	"common/logging"
+	"github.com/gorilla/websocket"
+	"time"
 )
 
 type GameClient struct {
@@ -43,7 +42,6 @@ var (
 
 func (c *GameClient) readGoroutine() {
 	defer func() {
-		logging.Debug("defer client id=%s", c.id)
 		c.gameRoom.unregister <- c
 		c.conn.Close()
 	}()
@@ -56,14 +54,11 @@ func (c *GameClient) readGoroutine() {
 
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
 				logging.Info("error: %v", err)
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-
-		//logging.Debug("id %s get msg: %s",c.id,message)
+		c.read <- bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 	}
 }
 
@@ -73,10 +68,6 @@ func (c *GameClient) writeGoroutine() {
 		ticker.Stop()
 		c.conn.Close()
 	}()
-
-	//if w, err := c.conn.NextWriter(websocket.TextMessage); err == nil {
-	//	w.Write([]byte(helloMessage))
-	//}
 
 	for {
 		select {
@@ -93,14 +84,6 @@ func (c *GameClient) writeGoroutine() {
 				return
 			}
 			w.Write(message)
-
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
-			}
-
 			if err := w.Close(); err != nil {
 				return
 			}
@@ -118,7 +101,4 @@ func (c *GameClient) Send(msg []byte) {
 		c.send <- msg
 	}
 
-}
-func isData(frameType int) bool {
-	return frameType == websocket.TextMessage || frameType == websocket.BinaryMessage
 }
