@@ -2,23 +2,32 @@ package main
 
 import (
 	_ "net/http/pprof"
-	"game"
+	"sync"
 	"time"
+	"game"
 	"common/logging"
 	"os"
-	"sync"
+	"config"
+	"manager"
+	"statistics"
+	"os/signal"
+	"syscall"
 )
 
 var tmpMap sync.Map
 
 func main() {
-	//config.InitMain()
-	//logging.Debug("server start")
-	//manager.StartServers()
-	//statistics.PrintStatistics()
-	//ChanShutdown := make(chan os.Signal)
-	//signal.Ignore(syscall.SIGHUP)
-	//<-ChanShutdown
+	config.InitMain()
+	logging.Debug("server start")
+	manager.StartServers()
+	statistics.PrintStatistics()
+	game.GameMallInst.Init()
+	ChanShutdown := make(chan os.Signal)
+	signal.Ignore(syscall.SIGHUP)
+	<-ChanShutdown
+
+}
+func test() {
 	a := make(chan []byte, 2)
 	start := time.Now()
 	go func() {
@@ -51,5 +60,4 @@ func main() {
 			}
 		}
 	}
-
 }

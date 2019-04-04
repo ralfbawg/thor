@@ -5,9 +5,18 @@ import (
 	"common/logging"
 	"github.com/gorilla/websocket"
 	"time"
+	"github.com/panjf2000/ants"
+)
+
+const (
+	ROOM_POS_A       = iota
+	ROOM_POS_B
+	USER_EVENT_START = "start"
+	USER_EVENT_EXIT  = "exit"
 )
 
 type GameClient struct {
+	gm       *GameMall
 	gameRoom *GameRoom
 
 	// The websocket connection.
@@ -19,6 +28,8 @@ type GameClient struct {
 	read chan []byte
 
 	id string
+
+	pos int8
 }
 
 const (
@@ -40,9 +51,21 @@ var (
 	space   = []byte{' '}
 )
 
+func (c *GameClient) run() {
+	ants.Submit(c.readGoroutine)
+	ants.Submit(c.writeGoroutine)
+}
+
+func (c *GameClient) findGame() {
+	c.gm.findClientId <- c.id
+}
+func (c *GameClient) exitGame() {
+	c.gameRoom.ExitClient(c)
+}
+
 func (c *GameClient) readGoroutine() {
 	defer func() {
-		c.gameRoom.unregister <- c
+		c.exitGame()
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -58,7 +81,14 @@ func (c *GameClient) readGoroutine() {
 			}
 			break
 		}
-		c.read <- bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		if string(message) == USER_EVENT_START {
+			c.findGame()
+		} else if string(message) == USER_EVENT_EXIT {
+			c.exitGame()
+		} else {
+			c.read <- message
+		}
 	}
 }
 
