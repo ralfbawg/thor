@@ -1,11 +1,10 @@
 package game
 
 import (
-	ws "github.com/gorilla/websocket"
-	"net/http"
-	"time"
 	"common/logging"
+	ws "github.com/gorilla/websocket"
 	"github.com/panjf2000/ants"
+	"net/http"
 	"util"
 	"util/uuid"
 )
@@ -22,7 +21,7 @@ var (
 	GameMallInst = &GameMall{
 		waitingClients: util.NewConcMap(),
 		gameRooms:      func() GameRooms { return NewGameRooms() }(),
-		findClientId:   make(chan string, 100),
+		findClientId:   make(chan string, 1000),
 	}
 )
 
@@ -74,7 +73,7 @@ func GameDispatch(w http.ResponseWriter, r *http.Request) {
 	} else {
 		client := &GameClient{
 			conn: conn,
-			send: make(chan []byte),
+			send: make(chan []byte, 20),
 			read: make(chan []byte),
 			id:   uuid.Generate().String(),
 		}
@@ -83,12 +82,4 @@ func GameDispatch(w http.ResponseWriter, r *http.Request) {
 
 }
 
-type Game struct {
-	gr      *GameRoom
-	statusC chan int8
-	start   time.Duration
-	bloodA  int8
-	bloodB  int8
-	clientA *GameClient
-	clientB *GameClient
-}
+

@@ -1,11 +1,9 @@
 package game
 
 import (
-	"github.com/panjf2000/ants"
-	"time"
-	"sync/atomic"
 	"common/logging"
 	"errors"
+	"sync/atomic"
 )
 
 const (
@@ -14,9 +12,13 @@ const (
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
 	GAME_STATUS_EMPTY
-	GAME_ERROR_FIND     = "EF"
-	GAME_EVENT_START3   = "GS3"
-	GAME_EVENT_START5   = "GS5"
+	GAME_ERROR_FIND   = "EF"
+	GAME_ERROR_NOT_RUNNING   = "NR"
+	GAME_EVENT_START3 = "GS3"
+	GAME_EVENT_START5 = "GS5"
+	GAME_EVENT_FINISH = "GF"
+	GAME_EVNET_WINNER_A="GWA"
+	GAME_EVNET_WINNER_B="GWB"
 )
 
 var (
@@ -27,16 +29,14 @@ var (
 )
 
 type GameRoom struct {
-	index      int
-	clientA    *GameClient
-	clientB    *GameClient
-	gm         *GameMall
-	obs        []*GameClient
-	broadcast  chan []byte
-	npc        func(clientA *GameClient, clientB *GameClient, running bool)
-	status     int8
-	gameStatus int8
-	statusC    chan int8
+	index   int
+	clientA *GameClient
+	clientB *GameClient
+	gm      *GameMall
+	obs     []*GameClient
+	status  int32
+	statusC chan int8
+	game    GameI
 }
 
 type GameRooms []*GameRoom
@@ -87,32 +87,34 @@ func (gr *GameRoom) Run() {
 			switch s {
 			case GAME_STATUS_READY:
 				gr.status = GAME_STATUS_READY
-				//gr.start = (time.Now().Add(5 * time.Second))
+
 				gr.BroadCast([]byte(GAME_EVENT_START3))
-				ants.Submit(func() { //开始
-					time.AfterFunc(3*time.Second, func() {
-						gr.statusC <- GAME_STATUS_RUNNING
-					})
-				})
-				ants.Submit(func() { //结束
-					time.AfterFunc(33*time.Second, func() {
-						gr.statusC <- GAME_STATUS_FINISH
-					})
-				})
+				gr.game.RunGame(gr)
+			case GAME_STATUS_RUNNING:
+			case GAME_STATUS_FINISH:
+				gr.status = GAME_STATUS_RUNNING
 			case GAME_STATUS_EMPTY:
 				if ResetRoomStatus(gr.index) {
 					gr.status = GAME_STATUS_PREPARE
 				}
 			}
-			ants.Submit(gr.RunGame)
 			break
 		}
 	}
 
 }
 
-func (gr *GameRoom) RunGame() {
-
+func (gr *GameRoom) GetStatus() int32 {
+	return atomic.LoadInt32(&gr.status)
+}
+func (gr *GameRoom) CheckStatus(stats []int32) bool {
+	currentStatus := gr.GetStatus()
+	for _, status := range stats {
+		if status == currentStatus {
+			return true
+		}
+	}
+	return false
 }
 func (room *GameRoom) BroadCast(msg []byte) {
 	room.clientB.Send(msg)
@@ -129,14 +131,12 @@ func NewGameRooms() GameRooms {
 	tmp := make(GameRooms, 1000)
 	for i := 0; i < 1000; i++ {
 		tmp[i] = &GameRoom{
-			index:     i,
-			broadcast: make(chan []byte, 10),
-			status:    GAME_STATUS_PREPARE,
-			statusC:   make(chan int8, 2),
-			gm:        GameMallInst,
-			npc: func(clientA *GameClient, clientB *GameClient, running bool) {
-			},
+			index:   i,
+			status:  GAME_STATUS_PREPARE,
+			statusC: make(chan int8, 2),
+			gm:      GameMallInst,
 		}
+		tmp[i].game = &ClassRoomGame{} //初始化游戏
 	}
 	return tmp
 }
