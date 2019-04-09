@@ -9,16 +9,19 @@ import (
 )
 
 const (
-	ROOM_POS_A       = iota
+	ROOM_POS_EMPTY = -1
+	ROOM_POS_A     = iota
 	ROOM_POS_B
 	USER_EVENT_START = "start"
 	USER_EVENT_EXIT  = "exit"
 )
 
 type GameClient struct {
-	gm       *GameMall
+	gm *GameMall
+
 	gameRoom *GameRoom
 
+	opp *GameClient
 	// The websocket connection.
 	conn *websocket.Conn
 
@@ -29,7 +32,7 @@ type GameClient struct {
 
 	id string
 
-	pos int8
+	pos int32
 }
 
 const (

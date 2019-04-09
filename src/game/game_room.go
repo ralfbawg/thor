@@ -3,6 +3,7 @@ package game
 import (
 	"common/logging"
 	"errors"
+	"github.com/panjf2000/ants"
 	"sync/atomic"
 )
 
@@ -12,13 +13,13 @@ const (
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
 	GAME_STATUS_EMPTY
-	GAME_ERROR_FIND   = "EF"
-	GAME_ERROR_NOT_RUNNING   = "NR"
-	GAME_EVENT_START3 = "GS3"
-	GAME_EVENT_START5 = "GS5"
-	GAME_EVENT_FINISH = "GF"
-	GAME_EVNET_WINNER_A="GWA"
-	GAME_EVNET_WINNER_B="GWB"
+	GAME_ERROR_FIND        = "EF"
+	GAME_ERROR_NOT_RUNNING = "NR"
+	GAME_EVENT_START3      = "GS3"
+	GAME_EVENT_START5      = "GS5"
+	GAME_EVENT_FINISH      = "GF"
+	GAME_EVNET_WINNER_A    = "GWA"
+	GAME_EVNET_WINNER_B    = "GWB"
 )
 
 var (
@@ -64,14 +65,17 @@ func (gr *GameRoom) AddClient(client *GameClient) bool {
 		gr.clientA = client
 		client.pos = ROOM_POS_A
 		if gr.clientA != nil && gr.clientB != nil {
+			gr.clientA.opp = gr.clientB
+			gr.clientB.opp = gr.clientA
 			gr.statusC <- GAME_STATUS_READY
-
 		}
 		return true
 	} else if gr.clientB != nil {
 		gr.clientB = client
 		client.pos = ROOM_POS_B
 		if gr.clientA != nil && gr.clientB != nil {
+			gr.clientA.opp = gr.clientB
+			gr.clientB.opp = gr.clientA
 			gr.statusC <- GAME_STATUS_READY
 
 		}
@@ -87,12 +91,12 @@ func (gr *GameRoom) Run() {
 			switch s {
 			case GAME_STATUS_READY:
 				gr.status = GAME_STATUS_READY
-
 				gr.BroadCast([]byte(GAME_EVENT_START3))
 				gr.game.RunGame(gr)
 			case GAME_STATUS_RUNNING:
-			case GAME_STATUS_FINISH:
 				gr.status = GAME_STATUS_RUNNING
+			case GAME_STATUS_FINISH:
+				gr.status = GAME_STATUS_FINISH
 			case GAME_STATUS_EMPTY:
 				if ResetRoomStatus(gr.index) {
 					gr.status = GAME_STATUS_PREPARE
@@ -117,15 +121,17 @@ func (gr *GameRoom) CheckStatus(stats []int32) bool {
 	return false
 }
 func (room *GameRoom) BroadCast(msg []byte) {
-	room.clientB.Send(msg)
-	room.clientA.Send(msg)
-}
+	go room.clientA.Send(msg)
+	go room.clientB.Send(msg)
+	ants.Submit(func() {
+		if room.obs != nil && len(room.obs) > 0 {
+			for _, v := range room.obs {
+				v.Send(msg)
+			}
+		}
+	})
 
-//func (room *GameRoom) Remove(id string) {
-//	if room.clientA.id == id {
-//
-//	}
-//}
+}
 
 func NewGameRooms() GameRooms {
 	tmp := make(GameRooms, 1000)
