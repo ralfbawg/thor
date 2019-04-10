@@ -117,6 +117,7 @@ func (c *GameClient) writeGoroutine() {
 				return
 			}
 			w.Write(message)
+
 			if err := w.Close(); err != nil {
 				return
 			}

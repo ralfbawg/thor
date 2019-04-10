@@ -5,10 +5,11 @@ import (
 	"errors"
 	"github.com/panjf2000/ants"
 	"sync/atomic"
+	"encoding/json"
 )
 
 const (
-	GAME_STATUS_PREPARE = iota
+	GAME_STATUS_PREPARE    = iota
 	GAME_STATUS_READY
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
@@ -91,8 +92,14 @@ func (gr *GameRoom) Run() {
 			switch s {
 			case GAME_STATUS_READY:
 				gr.status = GAME_STATUS_READY
-				gr.BroadCast([]byte(GAME_EVENT_START3))
-				gr.game.RunGame(gr)
+				msg := &GameMsg{
+					Event:     game_event_ready,
+					ReadyTime: 5,
+				}
+				if msgB, err := json.Marshal(msg); err == nil {
+					gr.BroadCast(msgB)
+					gr.game.RunGame(gr)
+				}
 			case GAME_STATUS_RUNNING:
 				gr.status = GAME_STATUS_RUNNING
 			case GAME_STATUS_FINISH:

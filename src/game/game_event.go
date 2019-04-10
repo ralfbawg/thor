@@ -29,7 +29,7 @@ type BaseGame struct {
 	code       string
 	prefixTime time.Duration
 	duringTime time.Duration
-	npc        func()
+	npc        func(pos int) bool
 	GameI
 }
 
@@ -46,7 +46,6 @@ func (bg *BaseGame) timeCounter(gr *GameRoom) {
 			time.AfterFunc(bg.duringTime, func() {
 				gr.statusC <- GAME_STATUS_FINISH
 			})
-			ants.Submit(bg.npc)
 		})
 	})
 }
@@ -73,22 +72,37 @@ func (crg *ClassRoomGame) Init(gr *GameRoom) {
 	crg.duringTime = 30 * time.Second
 	crg.punishDuration = 3 * time.Second
 	crg.punishRole = ROOM_POS_EMPTY
-	crg.npc = func() {
-		npcTimer := time.NewTicker(500 * time.Millisecond)
-		for t := range npcTimer.C {
-			rand.Seed(t.Unix())
-			if time.Now().Sub(crg.lastPunishTime) >= 3*time.Second {
-				if crg.punishRole != ROOM_POS_EMPTY {
-					crg.punishRole = ROOM_POS_EMPTY
-				}
-				if rand.Intn(100)%4 == 0 {
-					gr.BroadCast([]byte(EN1))
-					crg.lastPunishTime = time.Now()
-				}
+	crg.npc = func(pos int) bool {
+		now := time.Now()
+		rand.Seed(now)
+		if now.Sub(crg.lastPunishTime) >= 3*time.Second {
+			if crg.punishRole != ROOM_POS_EMPTY {
+				crg.punishRole = ROOM_POS_EMPTY
 			}
-
+			if rand.Intn(100)%4 == 0 {
+				//gr.BroadCast([]byte(EN1))
+				crg.lastPunishTime = time.Now()
+				return true
+			}
 		}
+		return false
 	}
+	//crg.npc = func(pos int) bool{
+	//	npcTimer := time.NewTicker(500 * time.Millisecond)
+	//	for t := range npcTimer.C {
+	//		rand.Seed(t.Unix())
+	//		if time.Now().Sub(crg.lastPunishTime) >= 3*time.Second {
+	//			if crg.punishRole != ROOM_POS_EMPTY {
+	//				crg.punishRole = ROOM_POS_EMPTY
+	//			}
+	//			if rand.Intn(100)%4 == 0 {
+	//				gr.BroadCast([]byte(EN1))
+	//				crg.lastPunishTime = time.Now()
+	//			}
+	//		}
+	//
+	//	}
+	//}
 }
 func (crg *ClassRoomGame) SetPunishRole(role int32) bool {
 	return atomic.CompareAndSwapInt32(&crg.punishRole, crg.punishRole, role)
@@ -99,25 +113,33 @@ func (crg *ClassRoomGame) isPunish() bool {
 }
 func (crg *ClassRoomGame) attack(client *GameClient, result string, gr *GameRoom) string {
 	if crg.isPunish() {
-		crg.checkPunish(client)
-	} else {
-		crg.lastHitA = time.Now()
-		result = EAA + "," + strconv.Itoa(crg.bloodA) + "," + strconv.Itoa(crg.bloodB)
-		if RemoveBloodAndCheckFinish(&crg.bloodB, gr) {
-			result += "," + GAME_EVENT_FINISH + "," + GAME_EVNET_WINNER_A
+		_, isMe := crg.checkPunish(client)
+		if isMe {
+			result = EAA + "," + strconv.Itoa(crg.bloodA) + "," + strconv.Itoa(crg.bloodB)
+			if RemoveBloodAndCheckFinish(&crg.bloodB, gr) {
+				result += "," + GAME_EVENT_FINISH + "," + GAME_EVNET_WINNER_A
+			}
+		} else {
+
 		}
+	}
+	crg.lastHitA = time.Now()
+	result = EAA + "," + strconv.Itoa(crg.bloodA) + "," + strconv.Itoa(crg.bloodB)
+	if RemoveBloodAndCheckFinish(&crg.bloodB, gr) {
+		result += "," + GAME_EVENT_FINISH + "," + GAME_EVNET_WINNER_A
+
 	}
 	return result
 
 }
-func (crg *ClassRoomGame) checkPunish(client *GameClient) (int, bool, bool) {
+func (crg *ClassRoomGame) checkPunish(client *GameClient) (int, bool) {
 	if crg.punishRole == ROOM_POS_EMPTY {
 		crg.SetPunishRole(client.pos)
-		return -2, true, true
+		return -2, true
 	} else if crg.punishRole == client.pos {
-		return 0, true, true
+		return 0, true
 	} else {
-		return 2, false, true
+		return 2, false
 	}
 }
 
@@ -226,5 +248,13 @@ func RemoveBloodAndCheckFinish(blood *int, gr *GameRoom) bool { //只有一个�
 		return true
 	} else {
 		return false
+	}
+}
+
+func getPosStr(pos int) string {
+	if pos == ROOM_POS_A {
+		return "A"
+	} else {
+		return "B"
 	}
 }
