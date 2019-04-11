@@ -57,6 +57,7 @@ func (gm *GameMall) Init() {
 						gameMsg := GetGameMsg()
 						gameMsg.Event = game_event_match
 						gameMsg.RoomNo = gr.index
+						gameMsg.Pos = getPosStr(gameClient.pos)
 						json, err := json.Marshal(gameMsg)
 						if err == nil {
 							gameClient.Send(json)

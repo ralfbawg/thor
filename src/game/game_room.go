@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	GAME_STATUS_PREPARE    = iota
+	GAME_STATUS_PREPARE = iota
 	GAME_STATUS_READY
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
@@ -140,7 +140,7 @@ func (room *GameRoom) reset() {
 	ants.Submit(func() {
 		clientA := room.clientA
 		clientB := room.clientB
-		room.clientA.gm, room.clientA.opp, room.clientB.gm, room.clientB.opp = nil, nil, nil, nil
+		clientA.opp, clientA.gameRoom, clientB.opp, clientB.gameRoom = nil, nil, nil, nil
 		room.clientA, room.clientB = nil, nil
 		room.statusC <- GAME_STATUS_EMPTY
 		room.gm.exitGameClient <- clientA
