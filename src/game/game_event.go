@@ -236,7 +236,7 @@ func (crg *ClassRoomGame) fillAndBroadcastAndReturn(gameMsg *GameMsg, gr *GameRo
 func (crg *ClassRoomGame) RunGame(gr *GameRoom) {
 	crg.timeCounter(gr)
 	ants.Submit(func() {
-		for {
+		for ;gr.CheckStatus([]int32{GAME_STATUS_RUNNING});{
 			select {
 			case a := <-gr.clientA.read:
 				gameMsg := GetGameMsg()

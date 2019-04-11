@@ -12,6 +12,7 @@ const (
 	GAME_STATUS_READY
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
+	GAME_STATUS_FINISH_ERROR
 	GAME_STATUS_EMPTY
 	GAME_ERROR_FIND        = "EF"
 	GAME_ERROR_NOT_RUNNING = "NR"
@@ -42,17 +43,21 @@ type GameRoom struct {
 
 type GameRooms []*GameRoom
 
-func (gr *GameRoom) ExitClient(client *GameClient) bool {
-	if gr.clientA.id == client.id {
+func (gr *GameRoom) ExitClient(client *GameClient, unexpect bool) bool {
+	if gr.clientA != nil && gr.clientA.id == client.id {
 		gr.gm.waitingClients.Set(client.id, client)
 		gr.clientA = nil
 	}
-	if gr.clientB.id == client.id {
+	if gr.clientB != nil && gr.clientB.id == client.id {
 		gr.gm.waitingClients.Set(client.id, client)
 		gr.clientB = nil
 	}
-	if gr.clientA == nil && gr.clientB == nil {
-		gr.statusC <- GAME_STATUS_EMPTY
+	if unexpect {
+		gr.statusC <- GAME_STATUS_FINISH_ERROR
+	} else {
+		if gr.clientA == nil && gr.clientB == nil {
+			gr.statusC <- GAME_STATUS_EMPTY
+		}
 	}
 	return true
 }
@@ -100,6 +105,10 @@ func (gr *GameRoom) Run() {
 			case GAME_STATUS_FINISH:
 				gr.status = GAME_STATUS_FINISH
 				gr.game.OnEvent(GAME_STATUS_FINISH)
+				gr.reset()
+			case GAME_STATUS_FINISH_ERROR:
+				gr.status = GAME_STATUS_FINISH
+				gr.game.OnEvent(GAME_STATUS_FINISH_ERROR)
 				gr.reset()
 			case GAME_STATUS_EMPTY:
 				if ResetRoomStatus(gr.index) {
