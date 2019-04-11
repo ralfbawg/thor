@@ -10,6 +10,7 @@ const (
 	game_event_npc1   = "npc1"
 	game_event_npc2   = "npc2"
 	game_event_finish = "finish"
+	game_event_finish_error = "finish_error"
 )
 
 type GameMsg struct {

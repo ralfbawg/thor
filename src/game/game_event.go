@@ -46,9 +46,13 @@ func (bg *BaseGame) Init(gr *GameRoom) {
 func (bg *BaseGame) timeCounter(gr *GameRoom) {
 	ants.Submit(func() { //开始
 		time.AfterFunc(bg.prefixTime, func() {
-			gr.statusC <- GAME_STATUS_RUNNING
+			if gr.CheckStatus([]int32{GAME_STATUS_READY}) {
+				gr.statusC <- GAME_STATUS_RUNNING
+			}
 			time.AfterFunc(bg.duringTime, func() {
-				gr.statusC <- GAME_STATUS_FINISH
+				if gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
+					gr.statusC <- GAME_STATUS_FINISH
+				}
 			})
 		})
 	})
@@ -104,7 +108,10 @@ func (crg *ClassRoomGame) OnEvent(gameRoomStatus int) {
 			msg.Winner = "C"
 		}
 		crg.Broadcast(msg, crg.gameRoom)
-
+	case GAME_STATUS_FINISH_ERROR:
+		msg := GetGameMsg()
+		msg.Event = game_event_finish_error
+		crg.Broadcast(msg, crg.gameRoom)
 	}
 }
 
@@ -236,39 +243,39 @@ func (crg *ClassRoomGame) fillAndBroadcastAndReturn(gameMsg *GameMsg, gr *GameRo
 func (crg *ClassRoomGame) RunGame(gr *GameRoom) {
 	crg.timeCounter(gr)
 	ants.Submit(func() {
-		for ;gr.CheckStatus([]int32{GAME_STATUS_RUNNING});{
+		for ; gr.CheckStatus([]int32{GAME_STATUS_RUNNING}); {
 			select {
 			case a := <-gr.clientA.read:
 				gameMsg := GetGameMsg()
-				if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
-					gameMsg.Code = 1
-				} else {
-					switch string(a) {
-					case EA:
-						if time.Now().Sub(crg.lastHitA) > 50*time.Millisecond {
-							crg.lastHitA = time.Now()
-							gameMsg.Event = game_event_attack
-							crg.attack(gr.clientA, gr, gameMsg)
-						}
+				//if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
+				//	gameMsg.Code = 1
+				//} else {
+				switch string(a) {
+				case EA:
+					if time.Now().Sub(crg.lastHitA) > 50*time.Millisecond {
+						crg.lastHitA = time.Now()
+						gameMsg.Event = game_event_attack
+						crg.attack(gr.clientA, gr, gameMsg)
 					}
 				}
+				//}
 				crg.fillAndBroadcastAndReturn(gameMsg, gr)
 			case b := <-gr.clientB.read:
 				gameMsg := GetGameMsg()
-				if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
-					gameMsg.Code = 1
-				} else {
-					switch string(b) {
-					case EA:
-						if time.Now().Sub(crg.lastHitB) > 50*time.Millisecond {
-							crg.lastHitB = time.Now()
-							gameMsg.Event = game_event_attack
-							crg.attack(gr.clientB, gr, gameMsg)
-						}
-
+				//if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
+				//	gameMsg.Code = 1
+				//} else {
+				switch string(b) {
+				case EA:
+					if time.Now().Sub(crg.lastHitB) > 50*time.Millisecond {
+						crg.lastHitB = time.Now()
+						gameMsg.Event = game_event_attack
+						crg.attack(gr.clientB, gr, gameMsg)
 					}
 
 				}
+
+				//}
 				crg.fillAndBroadcastAndReturn(gameMsg, gr)
 			}
 		}

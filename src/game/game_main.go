@@ -37,7 +37,6 @@ type GameMall struct {
 func (gm *GameMall) addClient(client *GameClient) {
 	logging.Info("add client id=%s", client.id)
 	gm.waitingClients.Set(client.id, client)
-	client.gm = gm
 	client.run()
 
 }
@@ -51,6 +50,7 @@ func (gm *GameMall) Init() {
 				logging.Info("get find req id=%s", clientId)
 				if client, exist := gm.waitingClients.Pop(clientId); exist {
 					if gr, err := gm.gameRooms.CreateOrGetGameRoom(); err == nil {
+						client.(*GameClient).gameRoom = gr
 						ants.Submit(gr.Run)
 						gameClient := client.(*GameClient)
 						gr.AddClient(gameClient)

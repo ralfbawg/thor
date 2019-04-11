@@ -70,7 +70,6 @@ func (c *GameClient) closeGame() {
 }
 func (c *GameClient) readGoroutine() {
 	defer func() {
-		c.exitGame()
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -78,9 +77,11 @@ func (c *GameClient) readGoroutine() {
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	c.conn.SetPingHandler(func(appData string) error { c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(pongWait)); return nil })
 	c.conn.SetCloseHandler(func(code int, text string) error {
-		logging.Info("哦活，对端关闭了")
-		message := websocket.FormatCloseMessage(code, "")
-		c.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
+		c.closeGame()
+		if c != nil && c.conn != nil {
+			message := websocket.FormatCloseMessage(code, "")
+			c.conn.WriteControl(websocket.CloseMessage, message, time.Now().Add(writeWait))
+		}
 		return nil
 	})
 	for {
