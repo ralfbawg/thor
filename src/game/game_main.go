@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"util"
 	"util/uuid"
+	"encoding/json"
 )
 
 var (
@@ -20,8 +21,8 @@ var (
 	}
 	GameMallInst = &GameMall{
 		waitingClients: util.NewConcMap(),
-		gameRooms:      func() GameRooms { return NewGameRooms() }(),
 		findClientId:   make(chan string, 1000),
+		exitGameClient: make(chan *GameClient, 100),
 	}
 )
 
@@ -34,6 +35,7 @@ type GameMall struct {
 }
 
 func (gm *GameMall) addClient(client *GameClient) {
+	logging.Info("add client id=%s", client.id)
 	gm.waitingClients.Set(client.id, client)
 	client.gm = gm
 	client.run()
@@ -41,21 +43,30 @@ func (gm *GameMall) addClient(client *GameClient) {
 }
 
 func (gm *GameMall) Init() {
+	GameMallInst.gameRooms = NewGameRooms()
 	ants.Submit(func() {
 		for {
 			select {
 			case clientId := <-gm.findClientId:
+				logging.Info("get find req id=%s", clientId)
 				if client, exist := gm.waitingClients.Pop(clientId); exist {
 					if gr, err := gm.gameRooms.CreateOrGetGameRoom(); err == nil {
-						gr.Run()
-						gr.AddClient(client.(*GameClient))
+						ants.Submit(gr.Run)
+						gameClient := client.(*GameClient)
+						gr.AddClient(gameClient)
+						gameMsg := GetGameMsg()
+						gameMsg.Event = game_event_match
+						gameMsg.RoomNo = gr.index
+						json, err := json.Marshal(gameMsg)
+						if err == nil {
+							gameClient.Send(json)
+						}
 					} else {
 						client.(*GameClient).Send([]byte(GAME_ERROR_FIND))
 					}
 				}
-
-
-
+			case client := <-gm.exitGameClient:
+				gm.waitingClients.Set(client.id, client)
 			}
 		}
 	})
@@ -73,6 +84,7 @@ func GameDispatch(w http.ResponseWriter, r *http.Request) {
 	} else {
 		client := &GameClient{
 			conn: conn,
+			gm:   GameMallInst,
 			send: make(chan []byte, 20),
 			read: make(chan []byte),
 			id:   uuid.Generate().String(),
@@ -81,5 +93,3 @@ func GameDispatch(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
-
-

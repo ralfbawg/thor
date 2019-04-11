@@ -12,6 +12,7 @@ import (
 	"statistics"
 	"os/signal"
 	"syscall"
+	"github.com/panjf2000/ants"
 )
 
 var tmpMap sync.Map
@@ -20,7 +21,7 @@ func main() {
 	config.InitMain()
 	logging.Debug("server start")
 	manager.StartServers()
-	statistics.PrintStatistics()
+	ants.Submit(statistics.PrintStatistics)
 	game.GameMallInst.Init()
 	ChanShutdown := make(chan os.Signal)
 	signal.Ignore(syscall.SIGHUP)

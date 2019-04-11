@@ -13,6 +13,7 @@ import (
 	"api"
 	"runtime/debug"
 	"game"
+	"github.com/panjf2000/ants"
 )
 
 const (
@@ -39,9 +40,8 @@ func (c *serverManager) setWsWriteBuffSize(size int) {
 	upgrade.WriteBufferSize = size
 }
 func StartServers() {
-	go startHttpServer()
-	go startTcpServer()
-
+	ants.Submit(startHttpServer)
+	ants.Submit(startTcpServer)
 }
 func startHttpServer() {
 	logging.Info("start http server")

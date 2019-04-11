@@ -3,10 +3,12 @@ package game
 import "sync"
 
 const (
+	game_event_match  = "match"
 	game_event_ready  = "ready"
 	game_event_start  = "start"
 	game_event_attack = "attack"
-	game_event_npc    = "npc"
+	game_event_npc1   = "npc1"
+	game_event_npc2   = "npc2"
 	game_event_finish = "finish"
 )
 

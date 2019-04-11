@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	ROOM_POS_EMPTY = -1
-	ROOM_POS_A     = iota
+	ROOM_POS_EMPTY   = -1
+	ROOM_POS_A       = iota
 	ROOM_POS_B
 	USER_EVENT_START = "start"
 	USER_EVENT_EXIT  = "exit"
@@ -85,6 +85,7 @@ func (c *GameClient) readGoroutine() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		logging.Info("get message %s from client(%s)", message, c.id)
 		if string(message) == USER_EVENT_START {
 			c.findGame()
 		} else if string(message) == USER_EVENT_EXIT {

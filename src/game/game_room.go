@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	GAME_STATUS_PREPARE = iota
+	GAME_STATUS_PREPARE    = iota
 	GAME_STATUS_READY
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
@@ -70,7 +70,7 @@ func (gr *GameRoom) AddClient(client *GameClient) bool {
 			gr.statusC <- GAME_STATUS_READY
 		}
 		return true
-	} else if gr.clientB != nil {
+	} else if gr.clientB == nil {
 		gr.clientB = client
 		client.pos = ROOM_POS_B
 		if gr.clientA != nil && gr.clientB != nil {
@@ -91,8 +91,8 @@ func (gr *GameRoom) Run() {
 			switch s {
 			case GAME_STATUS_READY:
 				gr.status = GAME_STATUS_READY
+				gr.game.Init(gr)
 				gr.game.OnEvent(GAME_STATUS_READY)
-
 				gr.game.RunGame(gr)
 			case GAME_STATUS_RUNNING:
 				gr.game.OnEvent(GAME_STATUS_RUNNING)
@@ -100,6 +100,7 @@ func (gr *GameRoom) Run() {
 			case GAME_STATUS_FINISH:
 				gr.status = GAME_STATUS_FINISH
 				gr.game.OnEvent(GAME_STATUS_FINISH)
+				gr.reset()
 			case GAME_STATUS_EMPTY:
 				if ResetRoomStatus(gr.index) {
 					gr.status = GAME_STATUS_PREPARE
@@ -135,6 +136,17 @@ func (room *GameRoom) BroadCast(msg []byte) {
 	})
 
 }
+func (room *GameRoom) reset() {
+	ants.Submit(func() {
+		clientA := room.clientA
+		clientB := room.clientB
+		room.clientA.gm, room.clientA.opp, room.clientB.gm, room.clientB.opp = nil, nil, nil, nil
+		room.clientA, room.clientB = nil, nil
+		room.statusC <- GAME_STATUS_EMPTY
+		room.gm.exitGameClient <- clientA
+		room.gm.exitGameClient <- clientB
+	})
+}
 
 func NewGameRooms() GameRooms {
 	tmp := make(GameRooms, 1000)
@@ -144,8 +156,9 @@ func NewGameRooms() GameRooms {
 			status:  GAME_STATUS_PREPARE,
 			statusC: make(chan int8, 2),
 			gm:      GameMallInst,
+			game:    &ClassRoomGame{}, //初始化游戏
 		}
-		tmp[i].game = &ClassRoomGame{} //初始化游戏
+		//tmp[i].game =
 	}
 	return tmp
 }
