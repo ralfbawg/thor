@@ -103,9 +103,7 @@ func (crg *ClassRoomGame) OnEvent(gameRoomStatus int) {
 		} else {
 			msg.Winner = "C"
 		}
-		if msgB, errB := json.Marshal(msg); errB == nil {
-			crg.gameRoom.BroadCast(msgB)
-		}
+		crg.Broadcast(msg, crg.gameRoom)
 
 	}
 }
@@ -222,17 +220,22 @@ func (crg *ClassRoomGame) checkPunish(client *GameClient) (int, bool) {
 }
 func (crg *ClassRoomGame) Broadcast(msg *GameMsg, gr *GameRoom) {
 	if msg.Event != "" || msg.Code != 0 {
-		crg.fillScoreAndTime(msg)
 		b, err := json.Marshal(msg)
 		if err == nil {
 			gr.BroadCast(b)
 		}
 	}
 }
+
+func (crg *ClassRoomGame) fillAndBroadcastAndReturn(gameMsg *GameMsg, gr *GameRoom) {
+	crg.fillScoreAndTime(gameMsg)
+	crg.Broadcast(gameMsg, gr)
+	ReturnGameMsg(gameMsg)
+}
+
 func (crg *ClassRoomGame) RunGame(gr *GameRoom) {
 	crg.timeCounter(gr)
 	ants.Submit(func() {
-		ticker := time.NewTicker(1 * time.Second)
 		for {
 			select {
 			case a := <-gr.clientA.read:
@@ -249,8 +252,7 @@ func (crg *ClassRoomGame) RunGame(gr *GameRoom) {
 						}
 					}
 				}
-				crg.Broadcast(gameMsg, gr)
-				ReturnGameMsg(gameMsg)
+				crg.fillAndBroadcastAndReturn(gameMsg, gr)
 			case b := <-gr.clientB.read:
 				gameMsg := GetGameMsg()
 				if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
@@ -267,13 +269,7 @@ func (crg *ClassRoomGame) RunGame(gr *GameRoom) {
 					}
 
 				}
-				crg.Broadcast(gameMsg, gr)
-				ReturnGameMsg(gameMsg)
-			case <-ticker.C:
-				if gr.GetStatus() == GAME_STATUS_FINISH { //停止监听
-					break
-				}
-
+				crg.fillAndBroadcastAndReturn(gameMsg, gr)
 			}
 		}
 	})
