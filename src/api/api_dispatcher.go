@@ -1,12 +1,11 @@
 package api
 
 import (
-	"net/http"
-	"strings"
 	"io"
 	"io/ioutil"
+	"net/http"
+	"strings"
 	ws "websocket"
-
 )
 
 const SuccessMsg = "success"
