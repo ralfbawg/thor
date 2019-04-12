@@ -11,7 +11,7 @@ func GameTest() {
 	start := time.Now()
 	go func() {
 		for i := 0; i < 10000; i++ {
-			id, _ := CreateOrGetGameRoomId()
+			id, _ := CreateOrGetGameRoomId(0)
 			logging.Info("a enter room %d", id)
 			//time.Sleep(10 * time.Microsecond)
 		}
@@ -19,7 +19,7 @@ func GameTest() {
 	}()
 	go func() {
 		for i := 0; i < 10000; i++ {
-			id, _ := CreateOrGetGameRoomId()
+			id, _ := CreateOrGetGameRoomId(0)
 			logging.Info("b enter room %d", id)
 			//time.Sleep(10 * time.Microsecond)
 		}

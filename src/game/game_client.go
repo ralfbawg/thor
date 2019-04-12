@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	ROOM_POS_EMPTY = -1
-	ROOM_POS_A     = iota
+	ROOM_POS_EMPTY   = -1
+	ROOM_POS_A       = iota
 	ROOM_POS_B
+	ROOM_POS_ALL      //both
 	USER_EVENT_START = "start"
 	USER_EVENT_EXIT  = "exit"
 )

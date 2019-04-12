@@ -5,22 +5,23 @@ import (
 	"errors"
 	"github.com/panjf2000/ants"
 	"sync/atomic"
+	"strconv"
 )
 
 const (
-	GAME_STATUS_PREPARE = iota
+	GAME_STATUS_PREPARE      = iota
 	GAME_STATUS_READY
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
 	GAME_STATUS_FINISH_ERROR
 	GAME_STATUS_EMPTY
-	GAME_ERROR_FIND        = "EF"
-	GAME_ERROR_NOT_RUNNING = "NR"
-	GAME_EVENT_START3      = "GS3"
-	GAME_EVENT_START5      = "GS5"
-	GAME_EVENT_FINISH      = "GF"
-	GAME_EVNET_WINNER_A    = "GWA"
-	GAME_EVNET_WINNER_B    = "GWB"
+	GAME_ERROR_FIND          = "EF"
+	GAME_ERROR_NOT_RUNNING   = "NR"
+	GAME_EVENT_START3        = "GS3"
+	GAME_EVENT_START5        = "GS5"
+	GAME_EVENT_FINISH        = "GF"
+	GAME_EVNET_WINNER_A      = "GWA"
+	GAME_EVNET_WINNER_B      = "GWB"
 )
 
 var (
@@ -113,9 +114,10 @@ func (gr *GameRoom) Run() {
 			case GAME_STATUS_EMPTY:
 				if ResetRoomStatus(gr.index) {
 					gr.status = GAME_STATUS_PREPARE
+					return
 				}
 			}
-			break
+
 		}
 	}
 
@@ -134,8 +136,12 @@ func (gr *GameRoom) CheckStatus(stats []int32) bool {
 	return false
 }
 func (room *GameRoom) BroadCast(msg []byte) {
-	go room.clientA.Send(msg)
-	go room.clientB.Send(msg)
+	ants.Submit(func() {
+		room.clientA.Send(msg)
+	})
+	ants.Submit(func() {
+		room.clientB.Send(msg)
+	})
 	ants.Submit(func() {
 		if room.obs != nil && len(room.obs) > 0 {
 			for _, v := range room.obs {
@@ -149,11 +155,15 @@ func (room *GameRoom) reset() {
 	ants.Submit(func() {
 		clientA := room.clientA
 		clientB := room.clientB
-		clientA.opp, clientA.gameRoom, clientB.opp, clientB.gameRoom = nil, nil, nil, nil
-		room.clientA, room.clientB = nil, nil
+		if clientA != nil {
+			clientA.opp, clientA.gameRoom, room.clientA = nil, nil, nil
+			room.gm.exitGameClient <- clientA
+		}
+		if clientA != nil {
+			clientB.opp, clientB.gameRoom, room.clientB = nil, nil, nil
+			room.gm.exitGameClient <- clientB
+		}
 		room.statusC <- GAME_STATUS_EMPTY
-		room.gm.exitGameClient <- clientA
-		room.gm.exitGameClient <- clientB
 	})
 }
 
@@ -172,17 +182,28 @@ func NewGameRooms() GameRooms {
 	return tmp
 }
 func (gr GameRooms) CreateOrGetGameRoom() (*GameRoom, error) {
-	if id, err := CreateOrGetGameRoomId(); err != nil {
-		return nil, err
-	} else {
-		return gr[id], nil
+	start := 0
+	count := 0
+	id, err := CreateOrGetGameRoomId(start);
+	for ; (err != nil || !gr[id].CheckStatus([]int32{GAME_STATUS_PREPARE})) && count < 10; start, count = id+1, count+1 {
+		id, _ = CreateOrGetGameRoomId(start)
 	}
+	if count >= 10 {
+		return nil, errors.New("找了" + strconv.Itoa(count) + "次找不到可用房间")
+	}
+	return gr[id], nil
+	//if id, err := CreateOrGetGameRoomId(0); err != nil && !gr[id].CheckStatus([]int32{GAME_STATUS_PREPARE}) {
+	//	return nil, err
+	//} else {
+	//	return gr[start], nil
+	//}
 }
 
-func CreateOrGetGameRoomId() (int, error) {
-	for i := 0; i < len(GameRoomsArr); i++ {
+func CreateOrGetGameRoomId(start int) (int, error) {
+	inputI := uint32((start % 16) * 2)
+	for i := start / 16; i < len(GameRoomsArr); i++ {
 		for j := atomic.LoadUint32(&GameRoomsArr[i]); j < ^uint32(0); {
-			if n, b := findRoomByBinarySearch(&GameRoomsArr[i], j, 0, 32, 0); b {
+			if n, b := findRoomByBinarySearch(&GameRoomsArr[i], j, inputI, 32, 0); b {
 				return n + i*16, nil
 			}
 		}

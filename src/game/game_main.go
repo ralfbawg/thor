@@ -50,9 +50,9 @@ func (gm *GameMall) Init() {
 				logging.Info("get find req id=%s", clientId)
 				if client, exist := gm.waitingClients.Pop(clientId); exist {
 					if gr, err := gm.gameRooms.CreateOrGetGameRoom(); err == nil {
-						client.(*GameClient).gameRoom = gr
-						ants.Submit(gr.Run)
 						gameClient := client.(*GameClient)
+						gameClient.gameRoom = gr
+						ants.Submit(gr.Run)
 						gr.AddClient(gameClient)
 						gameMsg := GetGameMsg()
 						gameMsg.Event = game_event_match
@@ -62,6 +62,7 @@ func (gm *GameMall) Init() {
 						if err == nil {
 							gameClient.Send(json)
 						}
+						ReturnGameMsg(gameMsg)
 					} else {
 						client.(*GameClient).Send([]byte(GAME_ERROR_FIND))
 					}

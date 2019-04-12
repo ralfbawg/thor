@@ -4,9 +4,9 @@ import (
 	"common/logging"
 	"encoding/json"
 	"github.com/panjf2000/ants"
-	"math/rand"
 	"sync/atomic"
 	"time"
+	"math/rand"
 )
 
 const (
@@ -31,7 +31,7 @@ type BaseGame struct {
 	code       string
 	prefixTime time.Duration
 	duringTime time.Duration
-	npc        func(pos int32) interface{}
+	npc        func(param interface{}) interface{}
 	startTime  time.Time
 	gameRoom   *GameRoom
 	GameI
@@ -63,6 +63,7 @@ type ClassRoomGame struct {
 	scoreB         int
 	lastHitA       time.Time
 	lastHitB       time.Time
+	lastCheckTime  time.Time
 	lastPunishTime time.Time
 	punishDuration time.Duration
 	punishRole     int32
@@ -76,23 +77,17 @@ func (crg *ClassRoomGame) OnEvent(gameRoomStatus int) {
 		msg.Event = game_event_ready
 		msg.ReadyTime = 5
 		msg.RoomNo = crg.gameRoom.index
-		ants.Submit(func() {
-			if msgA, errA := json.Marshal(msg); errA == nil {
-				crg.gameRoom.BroadCast(msgA)
-			}
-		})
-		ReturnGameMsg(msg)
+		crg.BroadcastAndReturn(msg, crg.gameRoom)
 	case GAME_STATUS_RUNNING:
 		crg.startTime = time.Now()
+		crg.npc(nil)
 		msg := GetGameMsg()
 		msg.Event = game_event_start
 		msg.ReadyTime = 0
 		msg.Time = int(crg.duringTime / time.Second)
 		msg.BScore = 0
 		msg.AScore = 0
-		if msgB, errB := json.Marshal(msg); errB == nil {
-			crg.gameRoom.BroadCast(msgB)
-		}
+		crg.BroadcastAndReturn(msg, crg.gameRoom)
 	case GAME_STATUS_FINISH:
 		msg := GetGameMsg()
 		msg.Event = game_event_finish
@@ -105,31 +100,58 @@ func (crg *ClassRoomGame) OnEvent(gameRoomStatus int) {
 		} else if crg.scoreA < crg.scoreB {
 			msg.Winner = "B"
 		} else {
-			msg.Winner = "C"
+			msg.Winner = "C" //平局
 		}
-		crg.Broadcast(msg, crg.gameRoom)
+		crg.BroadcastAndReturn(msg, crg.gameRoom)
 	case GAME_STATUS_FINISH_ERROR:
 		msg := GetGameMsg()
 		msg.Event = game_event_finish_error
-		crg.Broadcast(msg, crg.gameRoom)
+		crg.BroadcastAndReturn(msg, crg.gameRoom)
 	}
 }
 
 func (crg *ClassRoomGame) Init(gr *GameRoom) {
+	now := time.Now()
 	crg.gameRoom = gr
 	crg.scoreA = 0
 	crg.scoreB = 0
-	crg.lastHitA = time.Now()
-	crg.lastHitB = time.Now()
+	crg.lastHitA = now
+	crg.lastHitB = now
+	crg.lastCheckTime = now
 	crg.name = "教室战争"
 	crg.code = "classroom war"
 	crg.prefixTime = 3 * time.Second
-	crg.duringTime = 50 * time.Second
+	crg.duringTime = 60 * time.Second
 	crg.punishDuration = 3 * time.Second
 	crg.punishRole = ROOM_POS_EMPTY
-	crg.npc = func(pos int32) interface{} {
+	crg.npc = func(param interface{}) interface{} {
 		now := time.Now()
 		rand.Seed(now.Unix())
+
+		ants.Submit(func() {
+			npcTimer := time.NewTicker(500 * time.Millisecond)
+			count := 0
+			for now := range npcTimer.C {
+				if now.Sub(crg.lastPunishTime) >= crg.punishDuration && crg.getTimeLeft(time.Now()) > 10 { //最后10秒不产生惩罚
+					rand.Seed(now.Unix())
+					randNum := rand.Intn(100)
+					if now.Sub(crg.lastCheckTime).Round(time.Second) == 3*time.Second {
+						if now.Sub(crg.lastHitA)<500*time.Millisecond&&now.Sub(crg.lastHitA)<500*time.Millisecond {
+							crg.SetPunishRole(ROOM_POS_ALL)
+						}
+					}
+					if (randNum/4 == 0 && now.Sub(crg.lastPunishTime) > 4*time.Second) || now.Sub(crg.lastPunishTime) > 10*time.Second {
+						count++
+						crg.lastCheckTime = now
+						gameMsg := GetGameMsg()
+						gameMsg.Event = game_event_npc1
+						crg.fillAndBroadcastAndReturn(gameMsg, gr)
+					}
+
+				}
+			}
+		})
+
 		if now.Sub(crg.lastPunishTime) >= crg.punishDuration {
 			if crg.punishRole != ROOM_POS_EMPTY {
 				crg.punishRole = ROOM_POS_EMPTY
@@ -146,22 +168,6 @@ func (crg *ClassRoomGame) Init(gr *GameRoom) {
 		}
 		return ""
 	}
-	//crg.npc = func(pos int) bool{
-	//	npcTimer := time.NewTicker(500 * time.Millisecond)
-	//	for t := range npcTimer.C {
-	//		rand.Seed(t.Unix())
-	//		if time.Now().Sub(crg.lastPunishTime) >= 3*time.Second {
-	//			if crg.punishRole != ROOM_POS_EMPTY {
-	//				crg.punishRole = ROOM_POS_EMPTY
-	//			}
-	//			if rand.Intn(100)%4 == 0 {
-	//				gr.BroadCast([]byte(EN1))
-	//				crg.lastPunishTime = time.Now()
-	//			}
-	//		}
-	//
-	//	}
-	//}
 }
 func (crg *ClassRoomGame) SetPunishRole(role int32) bool {
 	return atomic.CompareAndSwapInt32(&crg.punishRole, crg.punishRole, role)
@@ -197,21 +203,14 @@ func (crg *ClassRoomGame) attack(client *GameClient, gr *GameRoom, gameMsg *Game
 			}
 		}
 	} else {
-		npcEvent := crg.npc(client.pos)
-		if npcEvent != "" {
-			gameMsg.Event = npcEvent.(string)
-			gameMsg.NpcObj = getPosStr(client.pos)
-			crg.SetPunishRole(client.pos)
+		if client.pos == ROOM_POS_A {
+			crg.lastHitB = time.Now()
+			gameMsg.AAttack = 1
+			crg.scoreA += 1
 		} else {
-			if client.pos == ROOM_POS_A {
-				crg.lastHitB = time.Now()
-				gameMsg.AAttack = 1
-				crg.scoreA += 1
-			} else {
-				crg.lastHitB = time.Now()
-				gameMsg.BAttack = 1
-				crg.scoreB += 1
-			}
+			crg.lastHitB = time.Now()
+			gameMsg.BAttack = 1
+			crg.scoreB += 1
 		}
 
 	}
@@ -219,7 +218,7 @@ func (crg *ClassRoomGame) attack(client *GameClient, gr *GameRoom, gameMsg *Game
 
 }
 func (crg *ClassRoomGame) checkPunish(client *GameClient) (int, bool) {
-	if crg.punishRole == client.pos {
+	if crg.punishRole == client.pos || crg.punishRole == ROOM_POS_ALL {
 		return 0, true
 	} else {
 		return -2, false
@@ -233,6 +232,10 @@ func (crg *ClassRoomGame) Broadcast(msg *GameMsg, gr *GameRoom) {
 		}
 	}
 }
+func (crg *ClassRoomGame) BroadcastAndReturn(msg *GameMsg, gr *GameRoom) {
+	crg.Broadcast(msg, gr)
+	ReturnGameMsg(msg)
+}
 
 func (crg *ClassRoomGame) fillAndBroadcastAndReturn(gameMsg *GameMsg, gr *GameRoom) {
 	crg.fillScoreAndTime(gameMsg)
@@ -243,39 +246,39 @@ func (crg *ClassRoomGame) fillAndBroadcastAndReturn(gameMsg *GameMsg, gr *GameRo
 func (crg *ClassRoomGame) RunGame(gr *GameRoom) {
 	crg.timeCounter(gr)
 	ants.Submit(func() {
-		for ; gr.CheckStatus([]int32{GAME_STATUS_RUNNING}); {
+		for {
 			select {
 			case a := <-gr.clientA.read:
 				gameMsg := GetGameMsg()
-				//if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
-				//	gameMsg.Code = 1
-				//} else {
-				switch string(a) {
-				case EA:
-					if time.Now().Sub(crg.lastHitA) > 50*time.Millisecond {
-						crg.lastHitA = time.Now()
-						gameMsg.Event = game_event_attack
-						crg.attack(gr.clientA, gr, gameMsg)
+				if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
+					gameMsg.Code = 1
+				} else {
+					switch string(a) {
+					case EA:
+						if time.Now().Sub(crg.lastHitA) > 50*time.Millisecond {
+							crg.lastHitA = time.Now()
+							gameMsg.Event = game_event_attack
+							crg.attack(gr.clientA, gr, gameMsg)
+						}
 					}
 				}
-				//}
 				crg.fillAndBroadcastAndReturn(gameMsg, gr)
 			case b := <-gr.clientB.read:
 				gameMsg := GetGameMsg()
-				//if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
-				//	gameMsg.Code = 1
-				//} else {
-				switch string(b) {
-				case EA:
-					if time.Now().Sub(crg.lastHitB) > 50*time.Millisecond {
-						crg.lastHitB = time.Now()
-						gameMsg.Event = game_event_attack
-						crg.attack(gr.clientB, gr, gameMsg)
+				if !gr.CheckStatus([]int32{GAME_STATUS_RUNNING}) {
+					gameMsg.Code = 1
+				} else {
+					switch string(b) {
+					case EA:
+						if time.Now().Sub(crg.lastHitB) > 50*time.Millisecond {
+							crg.lastHitB = time.Now()
+							gameMsg.Event = game_event_attack
+							crg.attack(gr.clientB, gr, gameMsg)
+						}
+
 					}
 
 				}
-
-				//}
 				crg.fillAndBroadcastAndReturn(gameMsg, gr)
 			}
 		}
@@ -293,6 +296,9 @@ func getPosStr(pos int32) string {
 func (crg *ClassRoomGame) fillScoreAndTime(gameMsg *GameMsg) {
 	gameMsg.AScore = crg.scoreA
 	gameMsg.BScore = crg.scoreB
-	min := crg.duringTime - time.Now().Sub(crg.startTime)
-	gameMsg.Time = int(min.Round(time.Second) / time.Second)
+	gameMsg.Time = crg.getTimeLeft(time.Now())
+}
+func (crg *ClassRoomGame) getTimeLeft(input time.Time) int {
+	min := crg.duringTime - input.Sub(crg.startTime)
+	return int(min.Round(time.Second) / time.Second)
 }
