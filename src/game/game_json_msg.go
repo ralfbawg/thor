@@ -9,7 +9,8 @@ const (
 	game_event_attack       = "attack"       //攻击
 	game_event_npc1         = "npc1"         //惩罚检测事件
 	game_event_npc2         = "npc2"         //老师
-	game_event_npc3         = "npc3"         //校长
+	game_event_npc22        = "npc22"        //校长
+	game_event_npc3         = "npc3"         //惩罚结束
 	game_event_finish       = "finish"       //正常结束
 	game_event_finish_error = "finish_error" //异常退出
 )

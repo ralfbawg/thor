@@ -136,12 +136,8 @@ func (gr *GameRoom) CheckStatus(stats []int32) bool {
 	return false
 }
 func (room *GameRoom) BroadCast(msg []byte) {
-	ants.Submit(func() {
-		room.clientA.Send(msg)
-	})
-	ants.Submit(func() {
-		room.clientB.Send(msg)
-	})
+	room.clientA.Send(msg)
+	room.clientB.Send(msg) //为了保证送到不用协程
 	ants.Submit(func() {
 		if room.obs != nil && len(room.obs) > 0 {
 			for _, v := range room.obs {
