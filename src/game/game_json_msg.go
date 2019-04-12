@@ -3,29 +3,31 @@ package game
 import "sync"
 
 const (
-	game_event_match  = "match"
-	game_event_ready  = "ready"
-	game_event_start  = "start"
-	game_event_attack = "attack"
-	game_event_npc1   = "npc1"
-	game_event_npc2   = "npc2"
-	game_event_finish = "finish"
-	game_event_finish_error = "finish_error"
+	game_event_match        = "match"        //匹配
+	game_event_ready        = "ready"        //准备期
+	game_event_start        = "start"        //开始
+	game_event_attack       = "attack"       //攻击
+	game_event_npc1         = "npc1"         //惩罚检测事件
+	game_event_npc2         = "npc2"         //老师
+	game_event_npc22        = "npc22"        //校长
+	game_event_npc3         = "npc3"         //惩罚结束
+	game_event_finish       = "finish"       //正常结束
+	game_event_finish_error = "finish_error" //异常退出
 )
 
 type GameMsg struct {
-	Code      int    `json:"code"`                 //0为正常，1为错误
-	Event     string `json:"event"`                //分别为ready,attack,npc,finish
-	ReadyTime int    `json:"readyTime,omitempty"`  //准备时间(秒)
-	Time      int    `json:"time"`                 //剩余时间(秒)
-	AAttack   int    `json:"AAttack"`              //A角色攻击
-	BAttack   int    `json:"BAttack"`              //A角色攻击
-	AScore    int    `json:"AScore"`               //A角色得分
-	BScore    int    `json:"BScore"`               //A角色得分
-	NpcObj    string `json:"npcObj,omitempty"`     //惩罚角色，分别A,B
-	Pos       string  `json:"pos,string,omitempty"` //座位位置
-	RoomNo    int    `json:"roomNo,omitempty"`     //房间号
-	Winner    string `json:"winner,omitempty"`     //胜者
+	Code      int    `json:"code"`                //0为正常，1为错误
+	Event     string `json:"event"`               //分别为ready,attack,npc,finish
+	ReadyTime int    `json:"readyTime,omitempty"` //准备时间(秒)
+	Time      int    `json:"time"`                //剩余时间(秒)
+	AAttack   int    `json:"AAttack"`             //A角色攻击
+	BAttack   int    `json:"BAttack"`             //A角色攻击
+	AScore    int    `json:"AScore"`              //A角色得分
+	BScore    int    `json:"BScore"`              //A角色得分
+	NpcObj    string `json:"npcObj,omitempty"`    //惩罚角色，分别A,B
+	Pos       string `json:"pos,omitempty"`       //座位位置
+	RoomNo    int    `json:"roomNo,omitempty"`    //房间号
+	Winner    string `json:"winner,omitempty"`    //胜者
 }
 
 //一个pp的对象池
