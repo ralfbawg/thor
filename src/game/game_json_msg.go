@@ -50,6 +50,7 @@ func GetGameMsg() *GameMsg {
 	m.Pos = ""
 	m.RoomNo = 0
 	m.Winner = ""
+	m.OppName = ""
 	return m
 }
 func ReturnGameMsg(msgs ...*GameMsg) {

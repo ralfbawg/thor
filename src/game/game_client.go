@@ -41,10 +41,10 @@ type GameClient struct {
 
 const (
 	// Time allowed to write a message to the peer.
-	writeWait = 10 * time.Second
+	writeWait = 100 * time.Second
 
 	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
+	pongWait = 600 * time.Second
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
@@ -67,14 +67,29 @@ func (c *GameClient) findGame(name interface{}) {
 	c.name = name.(string)
 	c.gm.findClientId <- c.id
 }
+
+//正常退出
 func (c *GameClient) exitGame() {
 	c.gameRoom.ExitClient(c, false)
 }
+
+//客户端要求退出
+func (c *GameClient) userFinishGame() {
+	c.gameRoom.ExitClient(c, false)
+}
+
+//异常关闭
 func (c *GameClient) closeGame() {
-	c.gameRoom.ExitClient(c, true)
+	if c.gameRoom == nil { //还没进入房间
+		c.gm.closeGameClient <- c.id
+	} else {
+		c.gameRoom.ExitClient(c, true)
+	}
+
 }
 func (c *GameClient) readGoroutine() {
 	defer func() {
+		logging.Info("哦活，我被关闭了")
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -102,9 +117,16 @@ func (c *GameClient) readGoroutine() {
 		logging.Info("get message %s from client(%s)", message, c.id)
 		//if string(message) == USER_EVENT_START {
 		if strings.HasPrefix(string(message), USER_EVENT_START) {
-			c.findGame(strings.Split(string(message)), ",")
+			leng := len(strings.Split(string(message), ","))
+			name := ""
+			if leng >= 2 {
+				name = strings.Split(string(message), ",")[1]
+			}
+			c.findGame(name)
+			//c.findGame(util.AOrB(func() bool { return }, strings.Split(string(message), ",")[1], "").(string))
 		} else if string(message) == USER_EVENT_EXIT {
-			c.exitGame()
+			//c.exitGame()
+			c.userFinishGame()
 		} else {
 			c.read <- message
 		}
@@ -150,5 +172,9 @@ func (c *GameClient) Send(msg []byte) {
 	if c != nil {
 		c.send <- msg
 	}
+
+}
+func (c *GameClient) GetName() string {
+	return c.name
 
 }

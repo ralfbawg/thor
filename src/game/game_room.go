@@ -9,19 +9,19 @@ import (
 )
 
 const (
-	GAME_STATUS_PREPARE = iota
+	GAME_STATUS_PREPARE      = iota
 	GAME_STATUS_READY
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
 	GAME_STATUS_FINISH_ERROR
 	GAME_STATUS_EMPTY
-	GAME_ERROR_FIND        = "EF"
-	GAME_ERROR_NOT_RUNNING = "NR"
-	GAME_EVENT_START3      = "GS3"
-	GAME_EVENT_START5      = "GS5"
-	GAME_EVENT_FINISH      = "GF"
-	GAME_EVNET_WINNER_A    = "GWA"
-	GAME_EVNET_WINNER_B    = "GWB"
+	GAME_ERROR_FIND          = "EF"
+	GAME_ERROR_NOT_RUNNING   = "NR"
+	GAME_EVENT_START3        = "GS3"
+	GAME_EVENT_START5        = "GS5"
+	GAME_EVENT_FINISH        = "GF"
+	GAME_EVNET_WINNER_A      = "GWA"
+	GAME_EVNET_WINNER_B      = "GWB"
 )
 
 var (
@@ -44,21 +44,21 @@ type GameRoom struct {
 
 type GameRooms []*GameRoom
 
+func (gr *GameRoom) IsEmpty() bool {
+	return gr.clientA == nil && gr.clientB == nil
+}
 func (gr *GameRoom) ExitClient(client *GameClient, unexpect bool) bool {
-	if gr.clientA != nil && gr.clientA.id == client.id {
-		gr.gm.waitingClients.Set(client.id, client)
+	logging.Info("room %d has somebody get out(%b)", gr.index, unexpect)
+	if gr.clientA.id == client.id {
 		gr.clientA = nil
 	}
-	if gr.clientB != nil && gr.clientB.id == client.id {
-		gr.gm.waitingClients.Set(client.id, client)
+	if gr.clientB.id == client.id {
 		gr.clientB = nil
 	}
 	if unexpect {
 		gr.statusC <- GAME_STATUS_FINISH_ERROR
 	} else {
-		if gr.clientA == nil && gr.clientB == nil {
-			gr.statusC <- GAME_STATUS_EMPTY
-		}
+		gr.statusC <- GAME_STATUS_EMPTY
 	}
 	return true
 }
@@ -112,8 +112,10 @@ func (gr *GameRoom) Run() {
 				gr.game.OnEvent(GAME_STATUS_FINISH_ERROR)
 				gr.reset()
 			case GAME_STATUS_EMPTY:
+				logging.Info("come to empty")
 				if ResetRoomStatus(gr.index) {
-					gr.status = GAME_STATUS_PREPARE
+					logging.Info("room %s reset success")
+					gr.statusC <- GAME_STATUS_PREPARE
 					return
 				}
 			}
@@ -159,6 +161,7 @@ func (room *GameRoom) reset() {
 			clientB.opp, clientB.gameRoom, room.clientB = nil, nil, nil
 			room.gm.exitGameClient <- clientB
 		}
+		logging.Info("room reset finish")
 		room.statusC <- GAME_STATUS_EMPTY
 	})
 }
@@ -219,7 +222,8 @@ func ResetRoomStatus(index int) bool {
 	if index%16 != 0 {
 		new = uint32(3) << uint32((16-index%16)*2)
 	}
-	new = old & new
+	new = old ^ new
+	logging.Info("reset room(%d) from %d to %d", index, old, new)
 	return atomic.CompareAndSwapUint32(&GameRoomsArr[i-1+j], old, new)
 }
 

@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 	"websocket"
+	"game"
+	"strconv"
 )
 
 var server = new(ApiDispatchServer)
@@ -116,3 +118,18 @@ func (server *ApiDispatchServer) Broadcast(w http.ResponseWriter, r *http.Reques
 	}
 	w.Write([]byte("{\"Code\": 0}"))
 }
+
+//游戏
+func (server *ApiDispatchServer) Gc(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		io.Copy(ioutil.Discard, r.Body)
+		r.Body.Close()
+	}()
+	resulta := ""
+	for id, c := range game.GameMallInst.Clients() {
+		resulta += "," + id + "|" + c.(*game.GameClient).GetName()
+	}
+	w.Write([]byte(resulta+"\n"))
+	w.Write([]byte(strconv.Itoa(int(game.GameRoomsArr[0]))))
+}
+
