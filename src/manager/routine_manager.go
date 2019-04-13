@@ -1,8 +1,8 @@
 package manager
 
 type GoRoutineItem struct {
-	id int
-	chanl chan<-string
+	id    int
+	chanl chan<- string
 }
 
 const (
@@ -23,6 +23,6 @@ const (
 //
 //}
 
-func DeleteGoFunc()  {
+func DeleteGoFunc() {
 
 }

@@ -1,10 +1,10 @@
 package util
 
 import (
-// "fmt"
-"sync"
-"sync/atomic"
-"unsafe"
+	// "fmt"
+	"sync"
+	"sync/atomic"
+	"unsafe"
 )
 
 // Map is a concurrent map with amortized-constant-time loads, stores, and deletes.

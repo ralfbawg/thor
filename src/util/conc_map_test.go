@@ -263,30 +263,30 @@ func BenchmarkMultiGetSetBlock_256_Shard(b *testing.B) {
 
 func GetSet(m ConcMap, finished chan struct{}) (set func(key, value string), get func(key, value string)) {
 	return func(key, value string) {
-		for i := 0; i < 10; i++ {
-			m.Get(key)
+			for i := 0; i < 10; i++ {
+				m.Get(key)
+			}
+			finished <- struct{}{}
+		}, func(key, value string) {
+			for i := 0; i < 10; i++ {
+				m.Set(key, value)
+			}
+			finished <- struct{}{}
 		}
-		finished <- struct{}{}
-	}, func(key, value string) {
-		for i := 0; i < 10; i++ {
-			m.Set(key, value)
-		}
-		finished <- struct{}{}
-	}
 }
 
 func GetSetSyncMap(m *sync.Map, finished chan struct{}) (set func(key, value string), get func(key, value string)) {
 	return func(key, value string) {
-		for i := 0; i < 10; i++ {
-			m.Load(key)
+			for i := 0; i < 10; i++ {
+				m.Load(key)
+			}
+			finished <- struct{}{}
+		}, func(key, value string) {
+			for i := 0; i < 10; i++ {
+				m.Store(key, value)
+			}
+			finished <- struct{}{}
 		}
-		finished <- struct{}{}
-	}, func(key, value string) {
-		for i := 0; i < 10; i++ {
-			m.Store(key, value)
-		}
-		finished <- struct{}{}
-	}
 }
 
 func runWithShards(bench func(b *testing.B), b *testing.B, shardsCount int) {

@@ -8,9 +8,10 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"util"
 )
 
-const SuccessMsg = "success"
+const accessKey = "qwerJOQ23j$qw"
 
 var server = new(ApiDispatchServer)
 
@@ -52,9 +53,47 @@ func (server *ApiDispatchServer) ListOnlineUsers(w http.ResponseWriter, r *http.
 	}
 	data, error := json.Marshal(resp)
 	if error != nil {
-		errorData := string("{\"code\": 1}")
+		errorData := string("{\"Code\": 1}")
 		w.Write([]byte(errorData))
 	} else {
 		w.Write([]byte(data))
 	}
+}
+
+//连接中的用户数
+func (server *ApiDispatchServer) ConnectingUsers(w http.ResponseWriter, r *http.Request) {
+	clients := game.GameMallInst.Clients()
+	resp := &ConnectingUsersResp{
+		Code:  0,
+		Users: len(clients),
+	}
+	data, error := json.Marshal(resp)
+	if error != nil {
+		errorData := string("{\"Code\": 1}")
+		w.Write([]byte(errorData))
+	} else {
+		w.Write([]byte(data))
+	}
+}
+
+//单播
+func (server *ApiDispatchServer) Unicast(w http.ResponseWriter, r *http.Request) {
+	clientId := r.URL.Query().Get("id")
+	msg := r.URL.Query().Get("msg")
+	myKey := r.URL.Query().Get("key")
+	if myKey != accessKey {
+		w.Write([]byte("{\"Code\": -1}"))
+		return
+	}
+	obj := game.GameMallInst.Clients()[clientId]
+	if obj != nil {
+		obj.(*game.GameClient).Send([]byte(msg))
+		w.Write([]byte("{\"Code\": 0}"))
+	} else {
+		w.Write([]byte("{\"Code\": 1}"))
+	}
+}
+
+func (server *ApiDispatchServer) Broadcast(w http.ResponseWriter, r *http.Request) {
+	util.NewConcMap()
 }

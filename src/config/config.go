@@ -13,7 +13,7 @@ type Configure struct {
 	}
 	Log struct {
 		Filepath string `yaml:"filepath"`
-		Level string `yaml:"level"`
+		Level    string `yaml:"level"`
 	}
 	Server struct {
 		Port           string `yaml:"port"`
@@ -21,12 +21,12 @@ type Configure struct {
 		ApiServicePath string `yaml:"apipath"`
 	}
 	Db struct {
-		Host      string `yaml:"host"`
-		Port   string `yaml:"port"`
+		Host     string `yaml:"host"`
+		Port     string `yaml:"port"`
 		Username string `yaml:"username"`
 		Password string `yaml:"password"`
 		DbType   string `yaml:"dbtype"`
-		DbName string `yaml:"dbname"`
+		DbName   string `yaml:"dbname"`
 	}
 	inited bool
 }

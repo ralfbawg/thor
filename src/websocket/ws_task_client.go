@@ -2,10 +2,10 @@ package websocket
 
 import (
 	"bytes"
+	"common/logging"
 	"github.com/gorilla/websocket"
 	"log"
 	"time"
-	"common/logging"
 )
 
 type WsTaskClient struct {
@@ -39,8 +39,8 @@ const (
 )
 
 var (
-	newline          = []byte{'\n'}
-	space            = []byte{' '}
+	newline = []byte{'\n'}
+	space   = []byte{' '}
 )
 
 func (c *WsTaskClient) readGoroutine() {
@@ -52,7 +52,10 @@ func (c *WsTaskClient) readGoroutine() {
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-	c.conn.SetPingHandler(func(appData string) error { c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(pongWait)); return nil })
+	c.conn.SetPingHandler(func(appData string) error {
+		c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(pongWait))
+		return nil
+	})
 	for {
 		_, message, err := c.conn.ReadMessage()
 

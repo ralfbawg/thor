@@ -7,6 +7,6 @@ type RedisDatasource struct {
 func (r *RedisDatasource) getData(id string) interface{} {
 	return "Test"
 }
-func (r *RedisDatasource) init()  {
+func (r *RedisDatasource) init() {
 
 }

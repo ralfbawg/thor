@@ -1,12 +1,12 @@
 package websocket
 
 import (
-	ws "github.com/gorilla/websocket"
-	"util"
-	"sync/atomic"
 	"common/logging"
-	"time"
+	ws "github.com/gorilla/websocket"
 	"github.com/panjf2000/ants"
+	"sync/atomic"
+	"time"
+	"util"
 )
 
 const (
@@ -171,7 +171,7 @@ func (task *WsTask) statistic() {
 			count := atomic.AddInt64(&task.clientCount, in)
 			atomic.AddInt64(&task.wsManager.ClientCount, in)
 			if in < 0 && count <= 0 {
-				atomic.StoreInt64(&task.wsManager.TaskCount,0)
+				atomic.StoreInt64(&task.wsManager.TaskCount, 0)
 				//if count < 0 {
 				//	atomic.StoreInt64(&task.wsManager.TaskCount,0)
 				//	atomic.AddInt64(&task.wsManager.TaskCount, int64(1-atomic.LoadInt64(&task.wsManager.TaskCount)))

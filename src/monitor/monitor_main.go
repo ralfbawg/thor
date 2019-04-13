@@ -2,10 +2,10 @@ package monitor
 
 import (
 	"common"
-	"runtime"
-	"time"
-	"runtime/debug"
 	"common/logging"
+	"runtime"
+	"runtime/debug"
+	"time"
 )
 
 const (

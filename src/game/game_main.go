@@ -2,12 +2,12 @@ package game
 
 import (
 	"common/logging"
+	"encoding/json"
 	ws "github.com/gorilla/websocket"
 	"github.com/panjf2000/ants"
 	"net/http"
 	"util"
 	"util/uuid"
-	"encoding/json"
 )
 
 var (

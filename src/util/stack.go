@@ -1,4 +1,5 @@
 package util
+
 import "container/list"
 
 type Stack struct {

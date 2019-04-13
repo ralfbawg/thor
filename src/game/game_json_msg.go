@@ -34,6 +34,7 @@ type GameMsg struct {
 var GameMsgPool = sync.Pool{
 	New: func() interface{} { return new(GameMsg) },
 }
+
 // 分配一个新的pp或者拿一个缓存的。
 func GetGameMsg() *GameMsg {
 	m := GameMsgPool.Get().(*GameMsg)

@@ -3,8 +3,8 @@ package util
 import (
 	"fmt"
 	"strconv"
-	"testing"
 	"sync"
+	"testing"
 )
 
 const countStep = 1000000
@@ -61,7 +61,7 @@ func BenchmarkSyncmap2(b *testing.B) { //0.04 ns/op
 		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
 	}
 	count := 0
-	for t:= range m.IterBuffered(){
+	for t := range m.IterBuffered() {
 		tcount, _ := strconv.Atoi(t.Val.(Animal).name)
 		count += tcount
 	}
@@ -91,6 +91,7 @@ func BenchmarkSyncmap3(b *testing.B) { //0.04 ns/op
 	})
 	fmt.Printf("get cm5 count = %d\n", count)
 }
+
 //func BenchmarkGood(b *testing.B) { //0.04 ns/op
 //	b.ReportAllocs()
 //

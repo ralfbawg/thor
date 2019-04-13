@@ -4,24 +4,24 @@ import (
 	"common/logging"
 	"errors"
 	"github.com/panjf2000/ants"
-	"sync/atomic"
 	"strconv"
+	"sync/atomic"
 )
 
 const (
-	GAME_STATUS_PREPARE      = iota
+	GAME_STATUS_PREPARE = iota
 	GAME_STATUS_READY
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
 	GAME_STATUS_FINISH_ERROR
 	GAME_STATUS_EMPTY
-	GAME_ERROR_FIND          = "EF"
-	GAME_ERROR_NOT_RUNNING   = "NR"
-	GAME_EVENT_START3        = "GS3"
-	GAME_EVENT_START5        = "GS5"
-	GAME_EVENT_FINISH        = "GF"
-	GAME_EVNET_WINNER_A      = "GWA"
-	GAME_EVNET_WINNER_B      = "GWB"
+	GAME_ERROR_FIND        = "EF"
+	GAME_ERROR_NOT_RUNNING = "NR"
+	GAME_EVENT_START3      = "GS3"
+	GAME_EVENT_START5      = "GS5"
+	GAME_EVENT_FINISH      = "GF"
+	GAME_EVNET_WINNER_A    = "GWA"
+	GAME_EVNET_WINNER_B    = "GWB"
 )
 
 var (
@@ -180,7 +180,7 @@ func NewGameRooms() GameRooms {
 func (gr GameRooms) CreateOrGetGameRoom() (*GameRoom, error) {
 	start := 0
 	count := 0
-	id, err := CreateOrGetGameRoomId(start);
+	id, err := CreateOrGetGameRoomId(start)
 	for ; (err != nil || !gr[id].CheckStatus([]int32{GAME_STATUS_PREPARE})) && count < 10; start, count = id+1, count+1 {
 		id, _ = CreateOrGetGameRoomId(start)
 	}
@@ -272,7 +272,7 @@ func findRoomByNormal() (int, bool) {
 
 func FindNotEmptyRoom() {
 	for k, v := range GameRoomsArr {
-		if (v != ^uint32(0) && v != 0) {
+		if v != ^uint32(0) && v != 0 {
 			logging.Info("the room(%d) is not full,value=%d", k+1, v)
 		}
 	}

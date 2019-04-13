@@ -4,9 +4,9 @@ import (
 	"common/logging"
 	"encoding/json"
 	"github.com/panjf2000/ants"
+	"math/rand"
 	"sync/atomic"
 	"time"
-	"math/rand"
 	"util"
 )
 

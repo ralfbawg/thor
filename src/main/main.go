@@ -1,18 +1,18 @@
 package main
 
 import (
-	_ "net/http/pprof"
-	"sync"
-	"time"
-	"game"
 	"common/logging"
-	"os"
 	"config"
-	"manager"
-	"statistics"
-	"os/signal"
-	"syscall"
+	"game"
 	"github.com/panjf2000/ants"
+	"manager"
+	_ "net/http/pprof"
+	"os"
+	"os/signal"
+	"statistics"
+	"sync"
+	"syscall"
+	"time"
 )
 
 var tmpMap sync.Map

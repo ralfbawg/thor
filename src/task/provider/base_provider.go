@@ -1,13 +1,13 @@
 package provider
 
 import (
-	"github.com/panjf2000/ants"
 	"datasource"
+	"github.com/panjf2000/ants"
 )
 
-var(
+var (
 	providerPoolDefaultSize = 100
-	providerPool,_ = ants.NewPool(providerPoolDefaultSize)
+	providerPool, _         = ants.NewPool(providerPoolDefaultSize)
 )
 
 type providerI interface {
@@ -19,6 +19,7 @@ type BaseProvider struct {
 	ds *datasource.BaseDataSource
 	providerI
 }
+
 func (p *BaseProvider) Init() {
 	p.ds.Init()
 }

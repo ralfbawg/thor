@@ -1,9 +1,9 @@
 package util
 
 import (
+	"common/logging"
 	"encoding/json"
 	"sync"
-	"common/logging"
 	"time"
 )
 
@@ -20,9 +20,9 @@ type ConcMap []*ConcurrentMapShared
 
 // A "thread" safe string to anything map.
 type ConcurrentMapShared struct {
-	items       map[string]interface{}
-	deleteCount uint8
-	lastRebuild time.Time
+	items        map[string]interface{}
+	deleteCount  uint8
+	lastRebuild  time.Time
 	sync.RWMutex // Read Write mutex, guards access to internal map.
 }
 
@@ -367,9 +367,10 @@ const (
 var (
 	Seed = uint32(1)
 )
+
 /*
 增加murmurhash，进一步加快吞吐
- */
+*/
 func murmurHash(key string) uint32 {
 	hash := Seed
 	iByte := 0

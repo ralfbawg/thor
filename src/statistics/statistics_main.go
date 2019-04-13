@@ -1,8 +1,8 @@
 package statistics
 
 import (
-	"time"
 	"common/logging"
+	"time"
 )
 
 var StatArr = []string{"taskSum", "taskClientSum"}

@@ -6,6 +6,7 @@ import (
 	"task/provider"
 	"util/uuid"
 )
+
 const (
 	appIdParam  = "appId"
 	appKeyParam = "appKey"
@@ -14,16 +15,16 @@ const (
 
 type AppTask struct {
 	Provider provider.BaseProvider
-	
 }
 
-func NewAppTask()  *AppTask{
+func NewAppTask() *AppTask {
 	return nil
 }
 
 func InitAppTask() {
-		db.GetAppDb()
+	db.GetAppDb()
 }
+
 /*
  验证app信息
 */

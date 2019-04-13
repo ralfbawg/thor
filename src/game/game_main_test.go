@@ -1,9 +1,9 @@
 package game
 
 import (
-	"time"
 	"common/logging"
 	"os"
+	"time"
 )
 
 func GameTest() {

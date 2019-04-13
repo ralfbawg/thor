@@ -3,8 +3,8 @@ package config
 import (
 	"common/logging"
 	"filter"
-	"websocket"
 	"monitor"
+	"websocket"
 )
 
 func InitMain() {

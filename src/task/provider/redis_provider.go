@@ -2,8 +2,8 @@ package provider
 
 import (
 	"datasource"
-	"reflect"
 	"errors"
+	"reflect"
 )
 
 type RedisProvider struct {
