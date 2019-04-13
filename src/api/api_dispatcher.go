@@ -2,16 +2,13 @@ package api
 
 import (
 	"encoding/json"
-	"game"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strings"
-	"util"
+	"websocket"
 )
-
-const accessKey = "qwerJOQ23j$qw"
 
 var server = new(ApiDispatchServer)
 
@@ -36,16 +33,22 @@ func (server *ApiDispatchServer) ListOnlineUsers(w http.ResponseWriter, r *http.
 		io.Copy(ioutil.Discard, r.Body)
 		r.Body.Close()
 	}()
-	clients := game.GameMallInst.Clients()
-	list := make([]*ClientInfo, len(clients))
-	for _, client := range clients {
-		id := client.(*game.GameClient).ID()
-		ip := client.(*game.GameClient).IP()
-		obj := &ClientInfo{
-			ClientId: id,
-			ClientIp: ip,
+	tasks := websocket.GetWsManager().GetTasks().Items()
+
+	list := make([]*ClientInfo, 0)
+	for _, tmp := range tasks {
+		task := tmp.(*websocket.WsTask)
+		appId := task.GetAppId()
+		clients := task.GetClients()
+		for id, client := range clients {
+			ip := client.(*websocket.WsTaskClient).GetConn().RemoteAddr().String()
+			obj := &ClientInfo{
+				AppId:    appId,
+				ClientId: id,
+				ClientIp: ip,
+			}
+			list = append(list, obj)
 		}
-		list = append(list, obj)
 	}
 	resp := &ListOnlineUsersResp{
 		Code: 0,
@@ -62,10 +65,14 @@ func (server *ApiDispatchServer) ListOnlineUsers(w http.ResponseWriter, r *http.
 
 //连接中的用户数
 func (server *ApiDispatchServer) ConnectingUsers(w http.ResponseWriter, r *http.Request) {
-	clients := game.GameMallInst.Clients()
+	defer func() {
+		io.Copy(ioutil.Discard, r.Body)
+		r.Body.Close()
+	}()
+	users := websocket.GetWsManager().ClientCount
 	resp := &ConnectingUsersResp{
 		Code:  0,
-		Users: len(clients),
+		Users: users,
 	}
 	data, error := json.Marshal(resp)
 	if error != nil {
@@ -78,22 +85,29 @@ func (server *ApiDispatchServer) ConnectingUsers(w http.ResponseWriter, r *http.
 
 //单播
 func (server *ApiDispatchServer) Unicast(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		io.Copy(ioutil.Discard, r.Body)
+		r.Body.Close()
+	}()
+	appId := r.URL.Query().Get("appId")
 	clientId := r.URL.Query().Get("id")
 	msg := r.URL.Query().Get("msg")
-	myKey := r.URL.Query().Get("key")
-	if myKey != accessKey {
-		w.Write([]byte("{\"Code\": -1}"))
-		return
-	}
-	obj := game.GameMallInst.Clients()[clientId]
-	if obj != nil {
-		obj.(*game.GameClient).Send([]byte(msg))
-		w.Write([]byte("{\"Code\": 0}"))
-	} else {
-		w.Write([]byte("{\"Code\": 1}"))
-	}
+	websocket.WsBroadcast(appId, clientId, msg)
+	w.Write([]byte("{\"Code\": 0}"))
 }
 
+//广播
 func (server *ApiDispatchServer) Broadcast(w http.ResponseWriter, r *http.Request) {
-	util.NewConcMap()
+	defer func() {
+		io.Copy(ioutil.Discard, r.Body)
+		r.Body.Close()
+	}()
+	msg := r.URL.Query().Get("msg")
+	tasks := websocket.GetWsManager().GetTasks().Items()
+	for _, tmp := range tasks {
+		task := tmp.(*websocket.WsTask)
+		appId := task.GetAppId()
+		websocket.WsBroadcast(appId, "", msg)
+	}
+	w.Write([]byte("{\"Code\": 0}"))
 }

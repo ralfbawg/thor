@@ -105,6 +105,9 @@ func (task *WsTask) Broadcast(msg []byte) {
 func (task *WsTask) GetClientCount() int64 {
 	return atomic.LoadInt64(&task.clientCount)
 }
+func (task *WsTask) GetClients() map[string]interface{} {
+	return task.clients.Items()
+}
 func (task *WsTask) GetAppId() string {
 	return task.appId
 }

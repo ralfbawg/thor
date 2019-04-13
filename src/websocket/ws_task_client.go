@@ -126,6 +126,9 @@ func (c *WsTaskClient) Send(msg []byte) {
 	}
 
 }
+func (c *WsTaskClient) GetConn() *websocket.Conn {
+	return c.conn
+}
 func isData(frameType int) bool {
 	return frameType == websocket.TextMessage || frameType == websocket.BinaryMessage
 }
