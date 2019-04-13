@@ -102,12 +102,17 @@ func (server *ApiDispatchServer) Broadcast(w http.ResponseWriter, r *http.Reques
 		io.Copy(ioutil.Discard, r.Body)
 		r.Body.Close()
 	}()
+	paramAppId := r.URL.Query().Get("appId")
 	msg := r.URL.Query().Get("msg")
-	tasks := websocket.GetWsManager().GetTasks().Items()
-	for _, tmp := range tasks {
-		task := tmp.(*websocket.WsTask)
-		appId := task.GetAppId()
-		websocket.WsBroadcast(appId, "", msg)
+	if paramAppId != "" {
+		websocket.WsBroadcast(paramAppId, "", msg)
+	} else {
+		tasks := websocket.GetWsManager().GetTasks().Items()
+		for _, tmp := range tasks {
+			task := tmp.(*websocket.WsTask)
+			appId := task.GetAppId()
+			websocket.WsBroadcast(appId, "", msg)
+		}
 	}
 	w.Write([]byte("{\"Code\": 0}"))
 }
