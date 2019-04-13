@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	ROOM_POS_EMPTY   = -1
-	ROOM_POS_A       = iota
+	ROOM_POS_EMPTY = -1
+	ROOM_POS_A     = iota
 	ROOM_POS_B
-	ROOM_POS_ALL      //both
+	ROOM_POS_ALL  //both
 	USER_EVENT_START = "start"
 	USER_EVENT_EXIT  = "exit"
 )
@@ -118,7 +118,7 @@ func (c *GameClient) readGoroutine() {
 		//if string(message) == USER_EVENT_START {
 		if strings.HasPrefix(string(message), USER_EVENT_START) {
 			leng := len(strings.Split(string(message), ","))
-			name := ""
+			name := c.id
 			if leng >= 2 {
 				name = strings.Split(string(message), ",")[1]
 			}
@@ -127,7 +127,7 @@ func (c *GameClient) readGoroutine() {
 		} else if string(message) == USER_EVENT_EXIT {
 			//c.exitGame()
 			c.userFinishGame()
-		} else {
+		} else if c.gameRoom != nil {
 			c.read <- message
 		}
 	}
