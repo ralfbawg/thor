@@ -52,6 +52,7 @@ func (gm *GameMall) Init() {
 		for {
 			select {
 			case clientId := <-gm.findClientId:
+				//clientId:=strings.Split(clientIdAndName,",")[0]
 				logging.Info("get find req id=%s", clientId)
 				if client, exist := gm.waitingClients.Pop(clientId); exist {
 					if gr, err := gm.gameRooms.CreateOrGetGameRoom(); err == nil {

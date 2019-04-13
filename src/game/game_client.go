@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"common/logging"
 	"github.com/gorilla/websocket"
-	"github.com/panjf2000/ants"
 	"time"
+	"github.com/panjf2000/ants"
+	"strings"
 )
 
 const (
-	ROOM_POS_EMPTY = -1
-	ROOM_POS_A     = iota
+	ROOM_POS_EMPTY   = -1
+	ROOM_POS_A       = iota
 	ROOM_POS_B
-	ROOM_POS_ALL     //both
+	ROOM_POS_ALL      //both
 	USER_EVENT_START = "start"
 	USER_EVENT_EXIT  = "exit"
 )
@@ -34,6 +35,8 @@ type GameClient struct {
 	id string
 
 	pos int32
+
+	name string
 }
 
 const (
@@ -60,7 +63,8 @@ func (c *GameClient) run() {
 	ants.Submit(c.writeGoroutine)
 }
 
-func (c *GameClient) findGame() {
+func (c *GameClient) findGame(name interface{}) {
+	c.name = name.(string)
 	c.gm.findClientId <- c.id
 }
 func (c *GameClient) exitGame() {
@@ -76,10 +80,7 @@ func (c *GameClient) readGoroutine() {
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-	c.conn.SetPingHandler(func(appData string) error {
-		c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(pongWait))
-		return nil
-	})
+	c.conn.SetPingHandler(func(appData string) error { c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(pongWait)); return nil })
 	c.conn.SetCloseHandler(func(code int, text string) error {
 		c.closeGame()
 		if c != nil && c.conn != nil {
@@ -99,8 +100,9 @@ func (c *GameClient) readGoroutine() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		logging.Info("get message %s from client(%s)", message, c.id)
-		if string(message) == USER_EVENT_START {
-			c.findGame()
+		//if string(message) == USER_EVENT_START {
+		if strings.HasPrefix(string(message), USER_EVENT_START) {
+			c.findGame(strings.Split(string(message)), ",")
 		} else if string(message) == USER_EVENT_EXIT {
 			c.exitGame()
 		} else {
@@ -149,11 +151,4 @@ func (c *GameClient) Send(msg []byte) {
 		c.send <- msg
 	}
 
-}
-
-func (c *GameClient) ID() string {
-	return c.id
-}
-func (c *GameClient) IP() string {
-	return c.conn.RemoteAddr().String()
 }
