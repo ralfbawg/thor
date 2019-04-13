@@ -41,6 +41,11 @@ func (gm *GameMall) addClient(client *GameClient) {
 
 }
 
+func (gm *GameMall) Clients() map[string]interface{} {
+
+	return gm.waitingClients.Items()
+}
+
 func (gm *GameMall) Init() {
 	GameMallInst.gameRooms = NewGameRooms()
 	ants.Submit(func() {
