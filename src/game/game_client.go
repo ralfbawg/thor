@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"common/logging"
 	"github.com/gorilla/websocket"
-	"time"
 	"github.com/panjf2000/ants"
+	"time"
 )
 
 const (
-	ROOM_POS_EMPTY   = -1
-	ROOM_POS_A       = iota
+	ROOM_POS_EMPTY = -1
+	ROOM_POS_A     = iota
 	ROOM_POS_B
-	ROOM_POS_ALL      //both
+	ROOM_POS_ALL     //both
 	USER_EVENT_START = "start"
 	USER_EVENT_EXIT  = "exit"
 )
@@ -76,7 +76,10 @@ func (c *GameClient) readGoroutine() {
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
-	c.conn.SetPingHandler(func(appData string) error { c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(pongWait)); return nil })
+	c.conn.SetPingHandler(func(appData string) error {
+		c.conn.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(pongWait))
+		return nil
+	})
 	c.conn.SetCloseHandler(func(code int, text string) error {
 		c.closeGame()
 		if c != nil && c.conn != nil {
@@ -146,4 +149,11 @@ func (c *GameClient) Send(msg []byte) {
 		c.send <- msg
 	}
 
+}
+
+func (c *GameClient) ID() string {
+	return c.id
+}
+func (c *GameClient) IP() string {
+	return c.conn.RemoteAddr().String()
 }
