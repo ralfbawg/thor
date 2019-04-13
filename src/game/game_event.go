@@ -124,7 +124,7 @@ func (crg *ClassRoomGame) Init(gr *GameRoom) {
 	crg.name = "教室战争"
 	crg.code = "classroom war"
 	crg.prefixTime = 3 * time.Second
-	crg.duringTime = 20 * time.Second
+	crg.duringTime = 60 * time.Second
 	crg.punishDuration = 2 * time.Second
 	crg.punishRole = ROOM_POS_EMPTY
 	crg.npc = func(param interface{}) interface{} {
