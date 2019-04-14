@@ -2,17 +2,26 @@ package api
 
 import (
 	"encoding/json"
+	"game"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"strings"
-	"websocket"
-	"game"
+	"runtime"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"websocket"
 )
 
 var server = new(ApiDispatchServer)
+var lastCpuStat = &CpuStat{
+	Usage: float64(0),
+	Busy:  float64(0),
+	Total: float64(0),
+}
+var cpuStatLock = sync.RWMutex{}
 
 type ApiDispatchServer struct {
 }
@@ -26,6 +35,29 @@ func ApiDispatch(w http.ResponseWriter, r *http.Request) {
 	obj := reflect.ValueOf(server).MethodByName(actionStr)
 	if obj.IsValid() {
 		obj.Call([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
+	}
+}
+
+func ApiDispatchInit() {
+	if runtime.GOOS != "linux" {
+		return
+	}
+	t := time.NewTicker(3 * time.Second)
+	defer t.Stop()
+	for {
+		if server != nil {
+			idle0, total0 := server.getCPUSample()
+			<-t.C
+			idle1, total1 := server.getCPUSample()
+			idleTicks := float64(idle1 - idle0)
+			totalTicks := float64(total1 - total0)
+			cpuUsage := 100 * (totalTicks - idleTicks) / totalTicks
+			cpuStatLock.Lock()
+			lastCpuStat.Usage = cpuUsage
+			lastCpuStat.Busy = totalTicks - idleTicks
+			lastCpuStat.Total = totalTicks
+			cpuStatLock.Unlock()
+		}
 	}
 }
 
@@ -119,6 +151,49 @@ func (server *ApiDispatchServer) Broadcast(w http.ResponseWriter, r *http.Reques
 	w.Write([]byte("{\"Code\": 0}"))
 }
 
+// 诊断信息 （内存 CPU）
+func (server *ApiDispatchServer) Diagnose(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		io.Copy(ioutil.Discard, r.Body)
+		r.Body.Close()
+	}()
+	stats := &runtime.MemStats{}
+	runtime.ReadMemStats(stats)
+	diagnoseStat := &DiagnoseStat{
+		Alloc:    float64(stats.Alloc),
+		Inuse:    float64(stats.HeapInuse),
+		Idle:     float64(stats.HeapIdle),
+		Sys:      float64(stats.HeapSys),
+		Released: float64(stats.HeapReleased),
+	}
+	ret, err := json.Marshal(diagnoseStat)
+	if err == nil {
+		w.Write(ret)
+	} else {
+		w.Write([]byte("{}"))
+	}
+}
+
+func (server *ApiDispatchServer) CpuUsage(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		io.Copy(ioutil.Discard, r.Body)
+		r.Body.Close()
+	}()
+	cpuStatLock.RLock()
+	cpuStat := &CpuStat{
+		Usage: lastCpuStat.Usage,
+		Busy:  lastCpuStat.Busy,
+		Total: lastCpuStat.Total,
+	}
+	cpuStatLock.RUnlock()
+	ret, err := json.Marshal(cpuStat)
+	if err == nil {
+		w.Write(ret)
+	} else {
+		w.Write([]byte("{}"))
+	}
+}
+
 //游戏
 func (server *ApiDispatchServer) Gc(w http.ResponseWriter, r *http.Request) {
 	defer func() {
@@ -129,7 +204,32 @@ func (server *ApiDispatchServer) Gc(w http.ResponseWriter, r *http.Request) {
 	for id, c := range game.GameMallInst.Clients() {
 		resulta += "," + id + "|" + c.(*game.GameClient).GetName()
 	}
-	w.Write([]byte(resulta+"\n"))
+	w.Write([]byte(resulta + "\n"))
 	w.Write([]byte(strconv.Itoa(int(game.GameRoomsArr[0]))))
 }
 
+func (server *ApiDispatchServer) getCPUSample() (idle, total uint64) {
+	contents, err := ioutil.ReadFile("/proc/stat")
+	if err != nil {
+		return
+	}
+	lines := strings.Split(string(contents), "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if fields[0] == "cpu" {
+			numFields := len(fields)
+			for i := 1; i < numFields; i++ {
+				val, err := strconv.ParseUint(fields[i], 10, 64)
+				if err == nil {
+					continue
+				}
+				total += val // tally up all the numbers to get total ticks
+				if i == 4 {  // idle is the 5th field in the cpu line
+					idle = val
+				}
+			}
+			return
+		}
+	}
+	return
+}
