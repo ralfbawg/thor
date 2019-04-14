@@ -4,14 +4,10 @@ import (
 	"api"
 	"common/logging"
 	"config"
-	"encoding/json"
 	"game"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"util"
@@ -47,6 +43,7 @@ func (c *serverManager) setWsWriteBuffSize(size int) {
 func StartServers() {
 	ants.Submit(startHttpServer)
 	ants.Submit(startTcpServer)
+	ants.Submit(api.ApiDispatchInit)
 }
 func startHttpServer() {
 	logging.Info("start http server")
@@ -93,6 +90,7 @@ func (c *serverManager) DebugHandler(w http.ResponseWriter, r *http.Request) {
 	//logging.Debug("process api")
 }
 
+<<<<<<< HEAD
 type DiagnoseStat struct {
 	Alloc    float64 `json:"alloc"`
 	Inuse    float64 `json:"inuse"`
@@ -120,6 +118,8 @@ func (c *serverManager) DiagnoseHandler(w http.ResponseWriter, r *http.Request) 
 	r.Body.Close()
 }
 
+=======
+>>>>>>> b51d15d51711dfb85a87cb0ecf9d1bfb2e48aeb9
 func handlerAdapter(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.RequestURI, "/")
 	actionStr := strings.Title(paths[1]) + ActionSuffix

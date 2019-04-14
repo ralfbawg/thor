@@ -5,12 +5,26 @@ type ListOnlineUsersResp struct {
 	List []*ClientInfo
 }
 type ClientInfo struct {
+	AppId    string //业务id
 	ClientId string //客户端id
 	ClientIp string //客户端ip
-	Status   int    //客户端状态, 0:链接中 1:匹配中 2:游戏中
 }
 
 type ConnectingUsersResp struct {
 	Code  int
-	Users int
+	Users int64
+}
+
+type DiagnoseStat struct {
+	Alloc    float64 `json:"alloc"`
+	Inuse    float64 `json:"inuse"`
+	Idle     float64 `json:"idle"`
+	Sys      float64 `json:"sys"`
+	Released float64 `json:"released"`
+}
+
+type CpuStat struct {
+	Usage float64
+	Busy  float64
+	Total float64
 }

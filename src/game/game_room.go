@@ -44,21 +44,24 @@ type GameRoom struct {
 
 type GameRooms []*GameRoom
 
+func (gr *GameRoom) IsEmpty() bool {
+	return gr.clientA == nil && gr.clientB == nil
+}
 func (gr *GameRoom) ExitClient(client *GameClient, unexpect bool) bool {
-	if gr.clientA != nil && gr.clientA.id == client.id {
-		gr.gm.waitingClients.Set(client.id, client)
+	logging.Info("room %d has somebody get out(%b)", gr.index, unexpect)
+	if gr.clientA.id == client.id {
+		logging.Info("exitA")
 		gr.clientA = nil
 	}
-	if gr.clientB != nil && gr.clientB.id == client.id {
-		gr.gm.waitingClients.Set(client.id, client)
+	if gr.clientB.id == client.id {
+		logging.Info("exitB")
 		gr.clientB = nil
 	}
 	if unexpect {
+		logging.Info("exitB")
 		gr.statusC <- GAME_STATUS_FINISH_ERROR
 	} else {
-		if gr.clientA == nil && gr.clientB == nil {
-			gr.statusC <- GAME_STATUS_EMPTY
-		}
+		gr.statusC <- GAME_STATUS_EMPTY
 	}
 	return true
 }
@@ -112,7 +115,9 @@ func (gr *GameRoom) Run() {
 				gr.game.OnEvent(GAME_STATUS_FINISH_ERROR)
 				gr.reset()
 			case GAME_STATUS_EMPTY:
+				logging.Info("come to empty")
 				if ResetRoomStatus(gr.index) {
+					logging.Info("room %s reset success")
 					gr.status = GAME_STATUS_PREPARE
 					return
 				}
@@ -149,16 +154,22 @@ func (room *GameRoom) BroadCast(msg []byte) {
 }
 func (room *GameRoom) reset() {
 	ants.Submit(func() {
+		logging.Info("reset")
 		clientA := room.clientA
 		clientB := room.clientB
 		if clientA != nil {
+			logging.Info("reset")
 			clientA.opp, clientA.gameRoom, room.clientA = nil, nil, nil
+			logging.Info("reset")
 			room.gm.exitGameClient <- clientA
 		}
-		if clientA != nil {
+		if clientB != nil {
+			logging.Info("reset")
 			clientB.opp, clientB.gameRoom, room.clientB = nil, nil, nil
+			logging.Info("reset")
 			room.gm.exitGameClient <- clientB
 		}
+		logging.Info("room reset finish")
 		room.statusC <- GAME_STATUS_EMPTY
 	})
 }
@@ -219,7 +230,8 @@ func ResetRoomStatus(index int) bool {
 	if index%16 != 0 {
 		new = uint32(3) << uint32((16-index%16)*2)
 	}
-	new = old & new
+	new = old ^ new
+	logging.Info("reset room(%d) from %d to %d", index, old, new)
 	return atomic.CompareAndSwapUint32(&GameRoomsArr[i-1+j], old, new)
 }
 

@@ -1,7 +1,6 @@
 package statistics
 
 import (
-	"common/logging"
 	"time"
 )
 
@@ -40,16 +39,16 @@ func PrintStatistics() {
 	}()
 	for {
 		select {
-		case <-tickA.C:
-			logging.Info("tasks count:%d", GetTaskCount())
-			//manager := websocket.GetWsManager()
-			//taskMap := manager.GetTasks()
-			//taskMap.Foreach(func(s string, i interface{}) {
-			//	logging.Debug("task key=%s", s)
-			//	logging.Debug("task value=%s", i.(*websocket.WsTask).GetAppId())
-			//})
-		case <-tickB.C:
-			logging.Info("clients count:%d", GetAllClientCount())
+		//case <-tickA.C:
+		//	logging.Info("tasks count:%d", GetTaskCount())
+		//	//manager := websocket.GetWsManager()
+		//	//taskMap := manager.GetTasks()
+		//	//taskMap.Foreach(func(s string, i interface{}) {
+		//	//	logging.Debug("task key=%s", s)
+		//	//	logging.Debug("task value=%s", i.(*websocket.WsTask).GetAppId())
+		//	//})
+		//case <-tickB.C:
+		//	logging.Info("clients count:%d", GetAllClientCount())
 		}
 	}
 }

@@ -20,18 +20,20 @@ var (
 		},
 	}
 	GameMallInst = &GameMall{
-		waitingClients: util.NewConcMap(),
-		findClientId:   make(chan string, 1000),
-		exitGameClient: make(chan *GameClient, 100),
+		waitingClients:  util.NewConcMap(),
+		findClientId:    make(chan string, 1000),
+		exitGameClient:  make(chan *GameClient, 100),
+		closeGameClient: make(chan string, 100),
 	}
 )
 
 type GameMall struct {
 	//游戏大厅，
-	waitingClients util.ConcMap
-	gameRooms      GameRooms
-	findClientId   chan string
-	exitGameClient chan *GameClient
+	waitingClients  util.ConcMap
+	gameRooms       GameRooms
+	findClientId    chan string
+	exitGameClient  chan *GameClient
+	closeGameClient chan string
 }
 
 func (gm *GameMall) addClient(client *GameClient) {
@@ -52,12 +54,15 @@ func (gm *GameMall) Init() {
 		for {
 			select {
 			case clientId := <-gm.findClientId:
+				//clientId:=strings.Split(clientIdAndName,",")[0]
 				logging.Info("get find req id=%s", clientId)
 				if client, exist := gm.waitingClients.Pop(clientId); exist {
 					if gr, err := gm.gameRooms.CreateOrGetGameRoom(); err == nil {
 						gameClient := client.(*GameClient)
 						gameClient.gameRoom = gr
-						ants.Submit(gr.Run)
+						if gr.IsEmpty() {
+							ants.Submit(gr.Run)
+						}
 						gr.AddClient(gameClient)
 						gameMsg := GetGameMsg()
 						gameMsg.Event = game_event_match
@@ -74,6 +79,9 @@ func (gm *GameMall) Init() {
 				}
 			case client := <-gm.exitGameClient:
 				gm.waitingClients.Set(client.id, client)
+
+			case id := <-gm.closeGameClient:
+				gm.waitingClients.Remove(id)
 			}
 		}
 	})
