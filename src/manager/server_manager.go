@@ -106,11 +106,11 @@ func (c *serverManager) DiagnoseHandler(w http.ResponseWriter, r *http.Request) 
 	stats := &runtime.MemStats{}
 	runtime.ReadMemStats(stats)
 	diagnoseStat := &DiagnoseStat{
-		Alloc:    float64(stats.Alloc),
-		Inuse:    float64(stats.HeapInuse),
-		Idle:     float64(stats.HeapIdle),
-		Sys:      float64(stats.HeapSys),
-		Released: float64(stats.HeapReleased),
+		Alloc:    float64(stats.HeapAlloc),    // 对内存分配到对象的内存空间
+		Inuse:    float64(stats.HeapInuse),    // 被占用的堆内存空间
+		Idle:     float64(stats.HeapIdle),     // 空闲的内存空间
+		Sys:      float64(stats.HeapSys),      // 向操作系统拿的总堆空间
+		Released: float64(stats.HeapReleased), // 释放给操作系统的内存空间
 	}
 	ret, err := json.Marshal(diagnoseStat)
 	if err == nil {
