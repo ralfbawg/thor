@@ -4,14 +4,10 @@ import (
 	"api"
 	"common/logging"
 	"config"
-	"encoding/json"
 	"game"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"reflect"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"util"
@@ -47,6 +43,7 @@ func (c *serverManager) setWsWriteBuffSize(size int) {
 func StartServers() {
 	ants.Submit(startHttpServer)
 	ants.Submit(startTcpServer)
+	ants.Submit(api.ApiDispatchInit)
 }
 func startHttpServer() {
 	logging.Info("start http server")
@@ -60,9 +57,6 @@ func startHttpServer() {
 }
 func startTcpServer() {
 	logging.Info("start tcp server")
-
-
-
 
 }
 func (c *serverManager) WsHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,33 +88,6 @@ func (c *serverManager) DebugHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//logging.Debug("process api")
-}
-
-type DiagnoseStat struct {
-	Alloc    float64 `json:"alloc"`
-	Inuse    float64 `json:"inuse"`
-	Idle     float64 `json:"idle"`
-	Sys      float64 `json:"sys"`
-	Released float64 `json:"released"`
-}
-
-// 诊断信息 （内存 CPU）
-func (c *serverManager) DiagnoseHandler(w http.ResponseWriter, r *http.Request) {
-	stats := &runtime.MemStats{}
-	runtime.ReadMemStats(stats)
-	diagnoseStat := &DiagnoseStat{
-		Alloc:    float64(stats.Alloc),
-		Inuse:    float64(stats.HeapInuse),
-		Idle:     float64(stats.HeapIdle),
-		Sys:      float64(stats.HeapSys),
-		Released: float64(stats.HeapReleased),
-	}
-	ret, err := json.Marshal(diagnoseStat)
-	if err == nil {
-		w.Write(ret)
-	}
-	io.Copy(ioutil.Discard, r.Body)
-	r.Body.Close()
 }
 
 func handlerAdapter(w http.ResponseWriter, r *http.Request) {
