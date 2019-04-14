@@ -9,19 +9,19 @@ import (
 )
 
 const (
-	GAME_STATUS_PREPARE      = iota
+	GAME_STATUS_PREPARE = iota
 	GAME_STATUS_READY
 	GAME_STATUS_RUNNING
 	GAME_STATUS_FINISH
 	GAME_STATUS_FINISH_ERROR
 	GAME_STATUS_EMPTY
-	GAME_ERROR_FIND          = "EF"
-	GAME_ERROR_NOT_RUNNING   = "NR"
-	GAME_EVENT_START3        = "GS3"
-	GAME_EVENT_START5        = "GS5"
-	GAME_EVENT_FINISH        = "GF"
-	GAME_EVNET_WINNER_A      = "GWA"
-	GAME_EVNET_WINNER_B      = "GWB"
+	GAME_ERROR_FIND        = "EF"
+	GAME_ERROR_NOT_RUNNING = "NR"
+	GAME_EVENT_START3      = "GS3"
+	GAME_EVENT_START5      = "GS5"
+	GAME_EVENT_FINISH      = "GF"
+	GAME_EVNET_WINNER_A    = "GWA"
+	GAME_EVNET_WINNER_B    = "GWB"
 )
 
 var (
@@ -50,12 +50,15 @@ func (gr *GameRoom) IsEmpty() bool {
 func (gr *GameRoom) ExitClient(client *GameClient, unexpect bool) bool {
 	logging.Info("room %d has somebody get out(%b)", gr.index, unexpect)
 	if gr.clientA.id == client.id {
+		logging.Info("exitA")
 		gr.clientA = nil
 	}
 	if gr.clientB.id == client.id {
+		logging.Info("exitB")
 		gr.clientB = nil
 	}
 	if unexpect {
+		logging.Info("exitB")
 		gr.statusC <- GAME_STATUS_FINISH_ERROR
 	} else {
 		gr.statusC <- GAME_STATUS_EMPTY
@@ -115,7 +118,7 @@ func (gr *GameRoom) Run() {
 				logging.Info("come to empty")
 				if ResetRoomStatus(gr.index) {
 					logging.Info("room %s reset success")
-					gr.statusC <- GAME_STATUS_PREPARE
+					gr.status = GAME_STATUS_PREPARE
 					return
 				}
 			}
@@ -151,14 +154,19 @@ func (room *GameRoom) BroadCast(msg []byte) {
 }
 func (room *GameRoom) reset() {
 	ants.Submit(func() {
+		logging.Info("reset")
 		clientA := room.clientA
 		clientB := room.clientB
 		if clientA != nil {
+			logging.Info("reset")
 			clientA.opp, clientA.gameRoom, room.clientA = nil, nil, nil
+			logging.Info("reset")
 			room.gm.exitGameClient <- clientA
 		}
-		if clientA != nil {
+		if clientB != nil {
+			logging.Info("reset")
 			clientB.opp, clientB.gameRoom, room.clientB = nil, nil, nil
+			logging.Info("reset")
 			room.gm.exitGameClient <- clientB
 		}
 		logging.Info("room reset finish")
