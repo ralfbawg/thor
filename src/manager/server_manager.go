@@ -43,6 +43,7 @@ func (c *serverManager) setWsWriteBuffSize(size int) {
 func StartServers() {
 	ants.Submit(startHttpServer)
 	ants.Submit(startTcpServer)
+	ants.Submit(api.ApiDispatchInit)
 }
 func startHttpServer() {
 	logging.Info("start http server")

@@ -11,11 +11,18 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"websocket"
 )
 
 var server = new(ApiDispatchServer)
+var lastCpuStat = &CpuStat{
+	Usage: float64(0),
+	Busy:  float64(0),
+	Total: float64(0),
+}
+var cpuStatLock = sync.RWMutex{}
 
 type ApiDispatchServer struct {
 }
@@ -29,6 +36,25 @@ func ApiDispatch(w http.ResponseWriter, r *http.Request) {
 	obj := reflect.ValueOf(server).MethodByName(actionStr)
 	if obj.IsValid() {
 		obj.Call([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
+	}
+}
+
+func ApiDispatchInit() {
+	t := time.NewTicker(3 * time.Second)
+	defer t.Stop()
+	for {
+		if server != nil {
+			<-t.C
+			cpus, _ := cpu.Percent(3*time.Second, true)
+			total := float64(0)
+			for _, value := range cpus {
+				total += value
+			}
+			avg := total / float64(len(cpus))
+			cpuStatLock.Lock()
+			lastCpuStat.Usage = avg
+			cpuStatLock.Unlock()
+		}
 	}
 }
 
@@ -150,15 +176,13 @@ func (server *ApiDispatchServer) CpuUsage(w http.ResponseWriter, r *http.Request
 		io.Copy(ioutil.Discard, r.Body)
 		r.Body.Close()
 	}()
-	cpus, _ := cpu.Percent(3*time.Second, true)
-	total := float64(0)
-	for _, value := range cpus {
-		total += value
-	}
-	avg := total / float64(len(cpus))
+	cpuStatLock.RLock()
 	cpuStat := &CpuStat{
-		Usage: avg,
+		Usage: lastCpuStat.Usage,
+		Busy:  lastCpuStat.Busy,
+		Total: lastCpuStat.Total,
 	}
+	cpuStatLock.RUnlock()
 	ret, err := json.Marshal(cpuStat)
 	if err == nil {
 		w.Write(ret)
@@ -179,30 +203,4 @@ func (server *ApiDispatchServer) Gc(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(resulta + "\n"))
 	w.Write([]byte(strconv.Itoa(int(game.GameRoomsArr[0]))))
-}
-
-func (server *ApiDispatchServer) getCPUSample() (idle, total uint64) {
-	contents, err := ioutil.ReadFile("/proc/stat")
-	if err != nil {
-		return
-	}
-	lines := strings.Split(string(contents), "\n")
-	for _, line := range lines {
-		fields := strings.Fields(line)
-		if fields[0] == "cpu" {
-			numFields := len(fields)
-			for i := 1; i < numFields; i++ {
-				val, err := strconv.ParseUint(fields[i], 10, 64)
-				if err == nil {
-					continue
-				}
-				total += val // tally up all the numbers to get total ticks
-				if i == 4 {  // idle is the 5th field in the cpu line
-					idle = val
-				}
-			}
-			return
-		}
-	}
-	return
 }
