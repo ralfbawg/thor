@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"game"
+	"github.com/shirou/gopsutil/cpu"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,18 +11,11 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 	"websocket"
 )
 
 var server = new(ApiDispatchServer)
-var lastCpuStat = &CpuStat{
-	Usage: float64(0),
-	Busy:  float64(0),
-	Total: float64(0),
-}
-var cpuStatLock = sync.RWMutex{}
 
 type ApiDispatchServer struct {
 }
@@ -35,29 +29,6 @@ func ApiDispatch(w http.ResponseWriter, r *http.Request) {
 	obj := reflect.ValueOf(server).MethodByName(actionStr)
 	if obj.IsValid() {
 		obj.Call([]reflect.Value{reflect.ValueOf(w), reflect.ValueOf(r)})
-	}
-}
-
-func ApiDispatchInit() {
-	if runtime.GOOS != "linux" {
-		return
-	}
-	t := time.NewTicker(3 * time.Second)
-	defer t.Stop()
-	for {
-		if server != nil {
-			idle0, total0 := server.getCPUSample()
-			<-t.C
-			idle1, total1 := server.getCPUSample()
-			idleTicks := float64(idle1 - idle0)
-			totalTicks := float64(total1 - total0)
-			cpuUsage := 100 * (totalTicks - idleTicks) / totalTicks
-			cpuStatLock.Lock()
-			lastCpuStat.Usage = cpuUsage
-			lastCpuStat.Busy = totalTicks - idleTicks
-			lastCpuStat.Total = totalTicks
-			cpuStatLock.Unlock()
-		}
 	}
 }
 
@@ -179,13 +150,15 @@ func (server *ApiDispatchServer) CpuUsage(w http.ResponseWriter, r *http.Request
 		io.Copy(ioutil.Discard, r.Body)
 		r.Body.Close()
 	}()
-	cpuStatLock.RLock()
-	cpuStat := &CpuStat{
-		Usage: lastCpuStat.Usage,
-		Busy:  lastCpuStat.Busy,
-		Total: lastCpuStat.Total,
+	cpus, _ := cpu.Percent(3*time.Second, true)
+	total := float64(0)
+	for _, value := range cpus {
+		total += value
 	}
-	cpuStatLock.RUnlock()
+	avg := total / float64(len(cpus))
+	cpuStat := &CpuStat{
+		Usage: avg,
+	}
 	ret, err := json.Marshal(cpuStat)
 	if err == nil {
 		w.Write(ret)
