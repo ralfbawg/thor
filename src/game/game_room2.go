@@ -33,6 +33,7 @@ var (
 
 type GameRoom struct {
 	index   int
+	players []*GameClient
 	clientA *GameClient
 	clientB *GameClient
 	gm      *GameMall
@@ -154,7 +155,6 @@ func (room *GameRoom) BroadCast(msg []byte) {
 }
 func (room *GameRoom) reset() {
 	ants.Submit(func() {
-
 		clientA := room.clientA
 		clientB := room.clientB
 		if clientA != nil {
