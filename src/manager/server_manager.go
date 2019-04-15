@@ -15,6 +15,10 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/panjf2000/ants"
+	"runtime"
+	"encoding/json"
+	"io"
+	"io/ioutil"
 )
 
 const (
@@ -90,7 +94,6 @@ func (c *serverManager) DebugHandler(w http.ResponseWriter, r *http.Request) {
 	//logging.Debug("process api")
 }
 
-<<<<<<< HEAD
 type DiagnoseStat struct {
 	Alloc    float64 `json:"alloc"`
 	Inuse    float64 `json:"inuse"`
@@ -118,8 +121,7 @@ func (c *serverManager) DiagnoseHandler(w http.ResponseWriter, r *http.Request) 
 	r.Body.Close()
 }
 
-=======
->>>>>>> b51d15d51711dfb85a87cb0ecf9d1bfb2e48aeb9
+
 func handlerAdapter(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.RequestURI, "/")
 	actionStr := strings.Title(paths[1]) + ActionSuffix
