@@ -21,10 +21,9 @@ var (
 )
 
 type WsTask struct {
-	wsManager *WsManager
+	app *WsApp
 	// App id
 	appId string
-	// Registered clients.
 	//clients *util.ConcurrentMap
 
 	clients util.ConcMap

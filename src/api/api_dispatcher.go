@@ -204,3 +204,7 @@ func (server *ApiDispatchServer) Gc(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resulta + "\n"))
 	w.Write([]byte(strconv.Itoa(int(game.GameRoomsArr[0]))))
 }
+//注册websocket应用
+func RegisterWs(w http.ResponseWriter, r *http.Request)  {
+
+}

@@ -71,6 +71,7 @@ func (gr *GameRoom) AddClient(client *GameClient) bool {
 	if gr.status != GAME_STATUS_PREPARE {
 		return false
 	}
+	gr.players = append(gr.players, client)
 	if gr.clientA == nil {
 		gr.clientA = client
 		client.pos = ROOM_POS_A

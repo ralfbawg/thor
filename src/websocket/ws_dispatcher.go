@@ -8,6 +8,7 @@ import (
 	"task"
 	"time"
 	"util"
+	"github.com/panjf2000/ants"
 )
 
 var manager *WsManager
@@ -23,8 +24,9 @@ var upgrade = websocket.Upgrader{
 
 type WsManager struct {
 	tasks              util.ConcMap
+	apps               util.ConcMap
+	register           chan *WsApp
 	totalBroadcast     chan []byte
-	register           chan *WsTask
 	TaskCount          int64
 	ClientCount        int64
 	broadcastTokenPool []int
@@ -35,6 +37,9 @@ func GetWsManager() *WsManager {
 }
 
 func (m *WsManager) Broadcast(appId string, msg string) {
+	if m.CheckAuth(appId) {
+		return
+	}
 	if appId == "" {
 		m.totalBroadcast <- []byte(msg)
 	} else {
@@ -44,20 +49,23 @@ func (m *WsManager) Broadcast(appId string, msg string) {
 		}
 	}
 }
+func (m *WsManager) CheckAuth(appId string) bool {
+	return false
+}
 
 func WsManagerInit() {
 	manager = &WsManager{
 		tasks:          util.NewConcMap(),
 		totalBroadcast: make(chan []byte, 10),
-		register:       make(chan *WsTask, 1000),
+		register:       make(chan *WsApp, 1000),
 	}
-	go func() {
+	ants.Submit(func() {
 		for {
 			select {
 			case msg := <-manager.totalBroadcast:
 				start := time.Now()
-				manager.tasks.IterCb(func(key string, v interface{}) {
-					v.(*WsTask).Broadcast(msg)
+				manager.apps.IterCb(func(key string, v interface{}) {
+					v.(*WsApp).Broadcast(msg)
 				})
 				//manager.tasks.Foreach(func(k string, i interface{}) {
 				//	i.(*WsTask).Broadcast(msg)
@@ -65,12 +73,12 @@ func WsManagerInit() {
 				end := time.Now()
 				logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())
 			case task := <-manager.register:
-				manager.tasks.Set(task.appId, task)
+				manager.apps.Set(task.appId, task)
 				atomic.AddInt64(&manager.TaskCount, 1)
 			}
 		}
 
-	}()
+	})
 }
 
 /**
