@@ -6,7 +6,7 @@ import (
 )
 
 type AuthFilter struct {
-	*BaseFilter
+	*BaseApiFilter
 }
 
 func (c *AuthFilter) before() {
@@ -15,4 +15,12 @@ func (c *AuthFilter) before() {
 
 func (c *AuthFilter) do(w http.ResponseWriter, r *http.Request) {
 	logging.Debug("do auth filter")
+}
+
+type RegFilter struct {
+	*BaseWsFilter
+}
+
+func (c *RegFilter) do(msg []byte) bool {
+	return true
 }

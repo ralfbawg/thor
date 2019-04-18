@@ -23,7 +23,6 @@ var upgrade = websocket.Upgrader{
 }
 
 type WsManager struct {
-	tasks              util.ConcMap
 	apps               util.ConcMap
 	register           chan *WsApp
 	totalBroadcast     chan []byte
@@ -43,9 +42,9 @@ func (m *WsManager) Broadcast(appId string, msg string) {
 	if appId == "" {
 		m.totalBroadcast <- []byte(msg)
 	} else {
-		task, ok := m.tasks.Get(appId)
-		if ok && task != nil {
-			task.(*WsTask).Broadcast([]byte(msg))
+		app, ok := m.apps.Get(appId)
+		if ok && app != nil {
+			app.(*WsApp).Broadcast([]byte(msg))
 		}
 	}
 }
@@ -55,7 +54,7 @@ func (m *WsManager) CheckAuth(appId string) bool {
 
 func WsManagerInit() {
 	manager = &WsManager{
-		tasks:          util.NewConcMap(),
+		apps:          util.NewConcMap(),
 		totalBroadcast: make(chan []byte, 10),
 		register:       make(chan *WsApp, 1000),
 	}
@@ -85,7 +84,7 @@ func WsManagerInit() {
 获取当前有多少任务
 */
 func (m *WsManager) GetSize() int64 {
-	return int64(m.tasks.Count())
+	return int64(m.apps.Count())
 }
 
 /**
@@ -94,7 +93,12 @@ func (m *WsManager) GetSize() int64 {
 func (m *WsManager) GetTasks() util.ConcMap {
 	return m.tasks
 }
-
+/**
+获取当前有多少应用
+*/
+func (m *WsManager) GetApps() util.ConcMap {
+	return m.apps.Count()
+}
 /**
 获取当前有多少任务
 */
