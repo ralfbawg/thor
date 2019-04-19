@@ -27,6 +27,7 @@ type WsManager struct {
 	register           chan *WsApp
 	totalBroadcast     chan []byte
 	TaskCount          int64
+	AppCount           int64
 	ClientCount        int64
 	broadcastTokenPool []int
 }
@@ -35,7 +36,7 @@ func GetWsManager() *WsManager {
 	return manager
 }
 
-func (m *WsManager) Broadcast(appId string, msg string) {
+func (m *WsManager) Broadcast(appId string, taskId int, msg string) {
 	if m.CheckAuth(appId) {
 		return
 	}
@@ -54,7 +55,7 @@ func (m *WsManager) CheckAuth(appId string) bool {
 
 func WsManagerInit() {
 	manager = &WsManager{
-		apps:          util.NewConcMap(),
+		apps:           util.NewConcMap(),
 		totalBroadcast: make(chan []byte, 10),
 		register:       make(chan *WsApp, 1000),
 	}
@@ -66,9 +67,6 @@ func WsManagerInit() {
 				manager.apps.IterCb(func(key string, v interface{}) {
 					v.(*WsApp).Broadcast(msg)
 				})
-				//manager.tasks.Foreach(func(k string, i interface{}) {
-				//	i.(*WsTask).Broadcast(msg)
-				//})
 				end := time.Now()
 				logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())
 			case task := <-manager.register:
@@ -88,22 +86,41 @@ func (m *WsManager) GetSize() int64 {
 }
 
 /**
-获取当前有多少任务
+获取当前所有任务
 */
-func (m *WsManager) GetTasks() util.ConcMap {
-	return m.tasks
+func (m *WsManager) GetTasks() int64 {
+	count := 0
+	for a := range m.apps.IterBuffered() {
+		count += len(a.Val.(*WsApp).Tasks)
+	}
+	return int64(count)
 }
+
 /**
 获取当前有多少应用
 */
-func (m *WsManager) GetApps() util.ConcMap {
-	return m.apps.Count()
+func (m *WsManager) GetApps() map[string]interface{} {
+	return m.apps.Items()
 }
+
 /**
 获取当前有多少任务
 */
 func (m *WsManager) GetTaskCount() int64 {
 	return atomic.LoadInt64(&m.TaskCount)
+}
+
+/**
+获取或者新建一个task
+*/
+func (m *WsManager) GetOrCreateTask(appId string, taskId int) *WsTask {
+	if tmp, ok := m.apps.Get(appId); !ok || tmp == nil {
+		task := NewWsTask(appId, m)
+		m.tasks.Set(appId, task)
+		return task
+	} else {
+		return tmp.(*WsTask)
+	}
 }
 
 /**
