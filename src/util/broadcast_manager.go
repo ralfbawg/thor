@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	BroadcastIns = &Broadcast{
-
+	BroadcastIns = &BroadcastTask{ //fixme
 	}
 )
 
@@ -54,9 +53,9 @@ func (b *BroadcastTask) Clean() {
 
 }
 func (b *BroadcastTask) Run() {
-	WsM := websocket.GetWsManager()
+	m := websocket.GetWsManager()
 	for {
-		WsM.TaskCount
+		m.TaskCount++ //fixme
 	}
 	BroadcastTaskPoolInst.Return(b)
 }

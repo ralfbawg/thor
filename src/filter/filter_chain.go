@@ -30,12 +30,14 @@ func DoWsFilter(msg []byte) {
 	}
 }
 
-type WsFilterChanin []*BaseWsFilter
-type ApiFilterChanin []*BaseApiFilter
+type WsFilterChain []*BaseWsFilter
+type ApiFilterChain []*BaseApiFilter
 
-func NewFilterChain(appId string) WsFilterChanin {
-
-	return nil
+func NewWsFilterChain(appId string) WsFilterChain {
+	t := make(WsFilterChain, 10)
+	reg := &RegFilter{}
+	t = append(t, reg)
+	return t
 }
 func findFilterByAppId() {
 
@@ -44,7 +46,7 @@ func getDefaultFilter() {
 
 }
 
-func (fc WsFilterChanin) doWsFilter(msg []byte) {
+func (fc WsFilterChain) doWsFilter(msg []byte) {
 	for _, v := range fc {
 		v.before(msg)
 		v.do(msg)

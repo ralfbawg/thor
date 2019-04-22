@@ -78,6 +78,14 @@ func WsManagerInit() {
 	})
 }
 
+func (m *WsManager) CreateOrGetApp(appId string) (*WsApp, error) {
+	if t, exist := m.apps.Get(appId); exist {
+		return t.(*WsApp), nil
+	} else {
+		return NewWsApp(m, appId)
+	}
+}
+
 /**
 获取当前有多少任务
 */
@@ -148,8 +156,8 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 		if conn, err := upgrade.Upgrade(w, r, nil); err != nil {
 			logging.Error("哦活,error:%s", err)
 		} else {
-			task := manager.GetOrCreateTask(appId)
-			task.AddClient(id, conn)
+			app := manager.CreateOrGetApp(appId)
+			app.AddClient(id, conn)
 		}
 	} else {
 		w.Write([]byte("appId 错误或者不存在"))

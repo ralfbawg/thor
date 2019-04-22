@@ -114,10 +114,10 @@ func (task *WsTask) Init() string {
 	return task.appId
 }
 
-func NewWsTask(appId string, manager *WsManager) *WsTask {
+func NewWsTask(appId string, app *WsApp) *WsTask {
 	task := &WsTask{
-		appId:     appId,
-		wsManager: manager,
+		appId: appId,
+		app:   app,
 		//clients:      make(map[*WsTaskClient]bool),
 		clients: util.NewConcMap(),
 		//clientsIndex: util.NewConcurrentMap(),
@@ -171,9 +171,10 @@ func (task *WsTask) statistic() {
 				in = in + t
 			}
 			count := atomic.AddInt64(&task.clientCount, in)
-			atomic.AddInt64(&task.wsManager.ClientCount, in)
+			task.app.
+			atomic.AddInt64(&task.clientCount, in)
 			if in < 0 && count <= 0 {
-				atomic.StoreInt64(&task.wsManager.TaskCount, 0)
+				atomic.StoreInt64(&task.app.TaskCount, 0)
 				//if count < 0 {
 				//	atomic.StoreInt64(&task.wsManager.TaskCount,0)
 				//	atomic.AddInt64(&task.wsManager.TaskCount, int64(1-atomic.LoadInt64(&task.wsManager.TaskCount)))
