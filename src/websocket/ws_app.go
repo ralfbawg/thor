@@ -16,9 +16,9 @@ type WsApp struct {
 	countC      chan int64
 }
 
-func (app *WsApp) AddClient(appId string, taskId int, client *WsTaskClient) {
+func (app *WsApp) AddClient(appId string, taskId int, uid string, client *WsTaskClient) {
 	task := app.Tasks[taskId]
-	task.AddClient(appId, client.conn)
+	task.AddClient(uid, client.conn)
 }
 
 func (app *WsApp) Broadcast(msg []byte) {
@@ -31,7 +31,7 @@ func (app *WsApp) Broadcast(msg []byte) {
 }
 
 func (app *WsApp) InitFilter() bool {
-	 app.filter = filter.WsFilters
+	app.filter = filter.WsFilters
 
 }
 func (app *WsApp) Init() bool {

@@ -29,6 +29,7 @@ type WsManager struct {
 	TaskCount          int64
 	AppCount           int64
 	ClientCount        int64
+	CCountC            chan int64
 	broadcastTokenPool []int
 }
 
@@ -58,6 +59,7 @@ func WsManagerInit() {
 		apps:           util.NewConcMap(),
 		totalBroadcast: make(chan []byte, 10),
 		register:       make(chan *WsApp, 1000),
+		CCountC:        make(chan int64, 100),
 	}
 	ants.Submit(func() {
 		for {
@@ -69,9 +71,11 @@ func WsManagerInit() {
 				})
 				end := time.Now()
 				logging.Debug("broadcast time cost %f second", end.Sub(start).Seconds())
-			case task := <-manager.register:
-				manager.apps.Set(task.appId, task)
-				atomic.AddInt64(&manager.TaskCount, 1)
+			case app := <-manager.register:
+				manager.apps.Set(app.appId, app)
+				atomic.AddInt64(&manager.AppCount, 1)
+			case ccount := <-manager.CCountC:
+				atomic.AddInt64(&manager.ClientCount, ccount)
 			}
 		}
 
