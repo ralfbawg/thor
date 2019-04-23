@@ -11,14 +11,14 @@ type WsApp struct {
 	wsManager *WsManager
 	// App id
 	appId       string
-	filter      filter.WsFilterChanin
+	filter      filter.WsFilterChain
 	clientCount int64
 	countC      chan int64
 }
 
-func (app *WsApp) AddClient(appId string, taskId int, client *WsTaskClient) {
+func (app *WsApp) AddClient(taskId int, client *WsTaskClient) {
 	task := app.Tasks[taskId]
-	task.AddClient(appId, client.conn)
+	task.AddClient(app.appId, client.conn)
 }
 
 func (app *WsApp) Broadcast(msg []byte) {
@@ -30,12 +30,12 @@ func (app *WsApp) Broadcast(msg []byte) {
 	logging.Debug("app id(%s) broadcast end %f,cost time:%f", app.appId, time.Now(), time.Now().Sub(start).Seconds())
 }
 
-func (app *WsApp) InitFilter() bool {
-	 app.filter = filter.WsFilters
-
+func (app *WsApp) InitFilter(appId string) bool {
+	app.filter = filter.NewWsFilterChain(appId)
+	return true
 }
 func (app *WsApp) Init() bool {
-	return app.InitFilter()
+	return app.InitFilter(app.appId)
 }
 func NewWsApp(wsManager *WsManager, appId string) (*WsApp, error) {
 	app := &WsApp{

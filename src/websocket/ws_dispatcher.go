@@ -156,8 +156,10 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 		if conn, err := upgrade.Upgrade(w, r, nil); err != nil {
 			logging.Error("哦活,error:%s", err)
 		} else {
-			app := manager.CreateOrGetApp(appId)
-			app.AddClient(id, conn)
+			if app,err := manager.CreateOrGetApp(appId);err==nil{
+				app.AddClient(id, conn)
+			}
+
 		}
 	} else {
 		w.Write([]byte("appId 错误或者不存在"))
