@@ -42,14 +42,14 @@ type WsTask struct {
 	incr chan int64
 }
 
-func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
+func (task *WsTask) AddClient(uid string, conn *ws.Conn) *WsTaskClient {
 	if task == nil {
 		logging.Info("task is empty")
 	}
 	if task.clients == nil {
 		logging.Info("task clients is empty")
 	}
-	if client, ok := task.clients.Get(id); ok && client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
+	if client, ok := task.clients.Get(uid); ok && client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
 		task.unregister <- client.(*WsTaskClient)
 		//task.clientsIndex[id].conn.Close()
 		//delete(task.clients, task.clientsIndex[id])
@@ -59,7 +59,7 @@ func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
 	client := &WsTaskClient{
 		task: task,
 		conn: conn,
-		id:   id,
+		uid:  uid,
 		send: make(chan []byte, 10),
 	}
 	client.task.register <- client
@@ -68,7 +68,7 @@ func (task *WsTask) AddClient(id string, conn *ws.Conn) *WsTaskClient {
 	//wrPool.Submit(client.readGoroutine)
 	//go client.readGoroutine()
 	//go client.writeGoroutine()
-	client.Send([]byte(hiMesaage + "," + client.id)) //fixme 第一次连接发送，方便测试
+	client.Send([]byte(hiMesaage + "," + client.uid)) //fixme 第一次连接发送，方便测试
 	return client
 }
 
@@ -139,11 +139,11 @@ func (task *WsTask) Run() {
 	for {
 		select {
 		case client := <-task.register:
-			task.clients.Set(client.id, client)
+			task.clients.Set(client.uid, client)
 			task.incr <- 1
 		case client := <-task.unregister:
-			if tClient, ok := task.clients.Get(client.id); ok && tClient != nil {
-				task.clients.Remove(client.id)
+			if tClient, ok := task.clients.Get(client.uid); ok && tClient != nil {
+				task.clients.Remove(client.uid)
 				close(client.send)
 				task.incr <- -1
 			}
@@ -171,10 +171,9 @@ func (task *WsTask) statistic() {
 				in = in + t
 			}
 			count := atomic.AddInt64(&task.clientCount, in)
-			task.app.
 			atomic.AddInt64(&task.clientCount, in)
 			if in < 0 && count <= 0 {
-				atomic.StoreInt64(&task.app.TaskCount, 0)
+				atomic.StoreInt64(&task.app.clientCount, 0)
 				//if count < 0 {
 				//	atomic.StoreInt64(&task.wsManager.TaskCount,0)
 				//	atomic.AddInt64(&task.wsManager.TaskCount, int64(1-atomic.LoadInt64(&task.wsManager.TaskCount)))

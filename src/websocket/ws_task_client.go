@@ -17,7 +17,7 @@ type WsTaskClient struct {
 	// Buffered channel of outbound messages.
 	send chan []byte
 
-	id string
+	uid string
 }
 
 const (
@@ -45,7 +45,7 @@ var (
 
 func (c *WsTaskClient) readGoroutine() {
 	defer func() {
-		logging.Debug("defer client id=%s", c.id)
+		logging.Debug("defer client uid=%s", c.uid)
 		c.task.unregister <- c
 		c.conn.Close()
 	}()
