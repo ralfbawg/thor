@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
-	"util"
 )
 
 const (
@@ -37,8 +36,8 @@ func (db *DbDatasource) Init() (*DbDatasource, error) {
 		engine.SetTableMapper(core.SnakeMapper{}) //table名称为驼峰
 		engine.SetColumnMapper(core.SameMapper{}) //列名对应为名字相同
 		dbSrc := engine.DB()
-		dbSrc.SetMaxOpenConns(util.AOrB(func() bool { return db.MaxConnection <= 0 }, 2000, db.MaxConnection).(int))
-		dbSrc.SetMaxIdleConns(util.AOrB(func() bool { return db.MaxIdleConnection <= 0 }, 1000, db.MaxIdleConnection).(int))
+		dbSrc.SetMaxOpenConns(AOrB(func() bool { return db.MaxConnection <= 0 }, 2000, db.MaxConnection).(int))
+		dbSrc.SetMaxIdleConns(AOrB(func() bool { return db.MaxIdleConnection <= 0 }, 1000, db.MaxIdleConnection).(int))
 		dbSrc.Ping()
 		engine.ShowSQL(true)
 		db.Db = engine
@@ -86,4 +85,12 @@ func (db *DbDatasource) GetDatasourceName() (string, error) {
 func (d *DbDatasource) getData(param ...string) interface{} {
 	logging.Debug("test")
 	return "test"
+}
+
+func AOrB(f func() bool, a interface{}, b interface{}) interface{} {
+	if f() {
+		return a
+	} else {
+		return b
+	}
 }

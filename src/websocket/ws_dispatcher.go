@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"task"
 	"time"
-	"util"
 	"github.com/panjf2000/ants"
+	"util"
 )
 
 var manager *WsManager

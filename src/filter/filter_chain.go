@@ -12,7 +12,7 @@ var (
 	WsFilters  = make(map[string]interface{}, filterMax)
 )
 
-func DoApiFilter(w *http.ResponseWriter, r *http.Request) {
+func DoApiFilter(w http.ResponseWriter, r *http.Request) {
 	for k, v := range ApiFilters {
 		if k != "" {
 			t := v.(BaseApiFilter)

@@ -51,7 +51,7 @@ func RegisterWsFilter(name string, f *BaseWsFilter) { //空方法
 
 }
 func GetWsFilter(appId string) *BaseWsFilter {
-	return WsFilters[appId]
+	return WsFilters[appId].(*BaseWsFilter )
 }
 func WsFilterSize() int {
 	return len(WsFilters)

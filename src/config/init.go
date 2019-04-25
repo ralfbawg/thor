@@ -2,7 +2,6 @@ package config
 
 import (
 	"common/logging"
-	"filter"
 	"monitor"
 	"websocket"
 )
@@ -14,7 +13,6 @@ func InitMain() {
 		logging.Debug("db hots:%s", c.Db.Host)
 		//db.InitDb(c.Db.Host, c.Db.Port, c.Db.DbName, c.Db.Username, c.Db.Password, c.Db.DbType)
 		monitor.MonitorInit()
-		filter.FilterInit()
 		websocket.WsManagerInit()
 	}
 

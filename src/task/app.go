@@ -1,9 +1,7 @@
 package task
 
 import (
-	"db"
 	"net/url"
-	"task/provider"
 	"util/uuid"
 	"strconv"
 )
@@ -15,17 +13,7 @@ const (
 	uidParam    = "uid"
 )
 
-type AppTask struct {
-	Provider provider.BaseProvider
-}
 
-func NewAppTask() *AppTask {
-	return nil
-}
-
-func InitAppTask() {
-	db.GetAppDb()
-}
 
 /*
  验证app信息

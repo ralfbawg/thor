@@ -6,7 +6,7 @@ import (
 )
 
 type StatisticFilter struct {
-	*BaseFilter
+	*BaseWsFilter
 }
 
 func (c *StatisticFilter) before() {

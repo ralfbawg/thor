@@ -4,8 +4,6 @@ import (
 	"sync"
 	"reflect"
 	"time"
-	"github.com/panjf2000/ants"
-	"websocket"
 )
 
 var (
@@ -52,16 +50,16 @@ func (b *BroadcastTask) Clean() {
 	b.start = time.Now()
 
 }
-func (b *BroadcastTask) Run() {
-	m := websocket.GetWsManager()
-	for {
-		m.TaskCount++ //fixme
-	}
-	BroadcastTaskPoolInst.Return(b)
-}
+//func (b *BroadcastTask) Run() {
+//	m := websocket.GetWsManager()
+//	for {
+//		m.TaskCount++ //fixme
+//	}
+//	BroadcastTaskPoolInst.Return(b)
+//}
 
-func NewBroadcastTask(appId string, taskId int, id string, msg []byte) *BroadcastTask {
-	task := BroadcastTaskPoolInst.Get().(*BroadcastTask)
-	ants.Submit(task.Run)
-	return task
-}
+//func NewBroadcastTask(appId string, taskId int, id string, msg []byte) *BroadcastTask {
+//	task := BroadcastTaskPoolInst.Get().(*BroadcastTask)
+//	ants.Submit(task.Run)
+//	return task
+//}
