@@ -64,10 +64,7 @@ func (task *WsTask) AddClient(uid string, conn *ws.Conn) *WsTaskClient {
 	}
 	client.task.register <- client
 
-	submitTaskAndResize(wrPool, append(funcs[:0], client.readGoroutine, client.writeGoroutine))
-	//wrPool.Submit(client.readGoroutine)
-	//go client.readGoroutine()
-	//go client.writeGoroutine()
+	submitTaskAndResize(wrPool, append(funcs[:0], client.readGoroutine, client.writeGoroutine)) //fixme funcs有可能有同步问题
 	client.Send([]byte(hiMesaage + "," + client.uid)) //fixme 第一次连接发送，方便测试
 	return client
 }
@@ -114,9 +111,9 @@ func (task *WsTask) Init() string {
 	return task.appId
 }
 
-func NewWsTask(appId string, app *WsApp) *WsTask {
+func NewWsTask(app *WsApp) *WsTask {
 	task := &WsTask{
-		appId: appId,
+		appId: app.appId,
 		app:   app,
 		//clients:      make(map[*WsTaskClient]bool),
 		clients: util.NewConcMap(),
@@ -126,9 +123,11 @@ func NewWsTask(appId string, app *WsApp) *WsTask {
 		unregister: make(chan *WsTaskClient, 2000),
 		incr:       make(chan int64, 2000),
 	}
-	manager.register <- task
-	go task.Run()
-	go task.statistic()
+	manager.register <- app
+	ants.Submit(task.Run)
+	ants.Submit(task.statistic)
+	//go task.Run()
+	//go task.statistic()
 	return task
 }
 

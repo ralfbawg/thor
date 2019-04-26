@@ -125,26 +125,13 @@ func (m *WsManager) GetTaskCount() int64 {
 /**
 获取或者新建一个task
 */
-func (m *WsManager) GetOrCreateTask(appId string, taskId int) *WsTask {
-	if tmp, ok := m.apps.Get(appId); !ok || tmp == nil {
-		task := NewWsTask(appId, m)
-		m.tasks.Set(appId, task)
+func (m *WsManager) GetOrCreateTask(app *WsApp, taskId int) *WsTask {
+	if task := app.Tasks[taskId]; task == nil {
+		task := NewWsTask(app)
+		app.Tasks[taskId] = task
 		return task
 	} else {
-		return tmp.(*WsTask)
-	}
-}
-
-/**
-获取或者新建一个task
-*/
-func (m *WsManager) GetOrCreateTask(appId string) *WsTask {
-	if tmp, ok := m.tasks.Get(appId); !ok || tmp == nil {
-		task := NewWsTask(appId, m)
-		m.tasks.Set(appId, task)
 		return task
-	} else {
-		return tmp.(*WsTask)
 	}
 }
 func (wsManager *WsManager) GetAllClientCount() int64 {
@@ -156,12 +143,12 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 	//filter.DoFilter(w, r)
 	param := r.URL.Query()
 	//logging.Debug(param.Get("appId"))
-	if appId, id, exist := task.VerifyAppInfo(param); exist == true {
+	if appId, taskId, uid, exist := task.VerifyAppInfo(param); exist == true {
 		if conn, err := upgrade.Upgrade(w, r, nil); err != nil {
 			logging.Error("哦活,error:%s", err)
 		} else {
-			if app,err := manager.CreateOrGetApp(appId);err==nil{
-				app.AddClient(id, conn)
+			if app, err := manager.CreateOrGetApp(appId); err == nil {
+				app.AddClient(taskId, uid, conn)
 			}
 
 		}
@@ -174,12 +161,13 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 /*
 广播主入口
 */
-func WsBroadcast(appId string, uid string, msg string) {
-	logging.Debug("param appid=%s,uid=%s", appId, uid)
-	if appId != "" && uid != "" { //单播
-		task := GetWsManager().GetOrCreateTask(appId)
+func WsBroadcast(appId string, taskId int, uid string, msg string) {
+	logging.Debug("param appid=%s,taskId=%d,uid=%s", appId, taskId, uid)
+
+	if app, _ := GetWsManager().apps.Get(appId); appId != "" && uid != "" { //单播
+		task := GetWsManager().GetOrCreateTask(app, taskId)
 		task.GetClient(uid).Send([]byte(msg))
 	} else {
-		GetWsManager().Broadcast(appId, msg)
+		GetWsManager().Broadcast(appId,taskId msg)
 	}
 }

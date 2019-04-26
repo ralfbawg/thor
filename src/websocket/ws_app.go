@@ -4,6 +4,7 @@ import (
 	"filter"
 	"common/logging"
 	"time"
+	"github.com/gorilla/websocket"
 )
 
 type WsApp struct {
@@ -16,9 +17,9 @@ type WsApp struct {
 	countC      chan int64
 }
 
-func (app *WsApp) AddClient(taskId int, client *WsTaskClient) {
+func (app *WsApp) AddClient(taskId int, uid string, con *websocket.Conn) {
 	task := app.Tasks[taskId]
-	task.AddClient(app.appId, client.conn)
+	task.AddClient(app.appId, con)
 }
 
 func (app *WsApp) Broadcast(msg []byte) {

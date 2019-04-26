@@ -138,12 +138,14 @@ func (server *ApiDispatchServer) Broadcast(w http.ResponseWriter, r *http.Reques
 	if paramAppId != "" {
 		websocket.WsBroadcast(paramAppId, "", msg)
 	} else {
-		tasks := websocket.GetWsManager().GetTasks().Items()
-		for _, tmp := range tasks {
-			task := tmp.(*websocket.WsTask)
-			appId := task.GetAppId()
-			websocket.WsBroadcast(appId, "", msg)
-		}
+
+		//TODO 新的广播方式
+		//tasks := websocket.GetWsManager().GetTasks().Items()
+		//for _, tmp := range tasks {
+		//	task := tmp.(*websocket.WsTask)
+		//	appId := task.GetAppId()
+		//	websocket.WsBroadcast(appId, "", msg)
+		//}
 	}
 	w.Write([]byte("{\"Code\": 0}"))
 }
@@ -204,7 +206,8 @@ func (server *ApiDispatchServer) Gc(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(resulta + "\n"))
 	w.Write([]byte(strconv.Itoa(int(game.GameRoomsArr[0]))))
 }
+
 //注册websocket应用
-func RegisterWs(w http.ResponseWriter, r *http.Request)  {
+func RegisterWs(w http.ResponseWriter, r *http.Request) {
 
 }
