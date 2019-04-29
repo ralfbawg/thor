@@ -64,22 +64,25 @@ func (server *ApiDispatchServer) ListOnlineUsers(w http.ResponseWriter, r *http.
 		io.Copy(ioutil.Discard, r.Body)
 		r.Body.Close()
 	}()
-	tasks := websocket.GetWsManager().GetTasks().Items()
+	tasks := websocket.GetWsManager().GetApps()
 
 	list := make([]*ClientInfo, 0)
 	for _, tmp := range tasks {
-		task := tmp.(*websocket.WsTask)
-		appId := task.GetAppId()
-		clients := task.GetClients()
-		for id, client := range clients {
-			ip := client.(*websocket.WsTaskClient).GetConn().RemoteAddr().String()
-			obj := &ClientInfo{
-				AppId:    appId,
-				ClientId: id,
-				ClientIp: ip,
+		app := tmp.(*websocket.WsApp)
+		appId := app.GetAppId()
+		Tasks := app.Tasks
+		for _, task := range Tasks {
+			for id, client := range task.GetClients() {
+				ip := client.(*websocket.WsTaskClient).GetConn().RemoteAddr().String()
+				obj := &ClientInfo{
+					AppId:    appId,
+					ClientId: id,
+					ClientIp: ip,
+				}
+				list = append(list, obj)
 			}
-			list = append(list, obj)
 		}
+
 	}
 	resp := &ListOnlineUsersResp{
 		Code: 0,
@@ -120,10 +123,10 @@ func (server *ApiDispatchServer) Unicast(w http.ResponseWriter, r *http.Request)
 		io.Copy(ioutil.Discard, r.Body)
 		r.Body.Close()
 	}()
-	appId := r.URL.Query().Get("appId")
-	clientId := r.URL.Query().Get("id")
-	msg := r.URL.Query().Get("msg")
-	websocket.WsBroadcast(appId, clientId, msg)
+	//appId := r.URL.Query().Get("appId")
+	//clientId := r.URL.Query().Get("id")
+	//msg := r.URL.Query().Get("msg")
+	//websocket.WsBroadcast(appId, clientId, msg)
 	w.Write([]byte("{\"Code\": 0}"))
 }
 
@@ -134,9 +137,9 @@ func (server *ApiDispatchServer) Broadcast(w http.ResponseWriter, r *http.Reques
 		r.Body.Close()
 	}()
 	paramAppId := r.URL.Query().Get("appId")
-	msg := r.URL.Query().Get("msg")
+	//msg := r.URL.Query().Get("msg")
 	if paramAppId != "" {
-		websocket.WsBroadcast(paramAppId, "", msg)
+		//websocket.WsBroadcast(paramAppId, "", msg)
 	} else {
 
 		//TODO 新的广播方式

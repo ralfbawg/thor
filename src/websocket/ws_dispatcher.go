@@ -165,9 +165,9 @@ func WsBroadcast(appId string, taskId int, uid string, msg string) {
 	logging.Debug("param appid=%s,taskId=%d,uid=%s", appId, taskId, uid)
 
 	if app, _ := GetWsManager().apps.Get(appId); appId != "" && uid != "" { //单播
-		task := GetWsManager().GetOrCreateTask(app, taskId)
+		task := GetWsManager().GetOrCreateTask(app.(*WsApp), taskId)
 		task.GetClient(uid).Send([]byte(msg))
 	} else {
-		GetWsManager().Broadcast(appId,taskId msg)
+		GetWsManager().Broadcast(appId, taskId, msg)
 	}
 }

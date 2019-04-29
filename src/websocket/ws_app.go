@@ -49,3 +49,6 @@ func NewWsApp(wsManager *WsManager, appId string) (*WsApp, error) {
 	app.Init()
 	return app, nil
 }
+func (app *WsApp) GetAppId() string {
+	return app.appId
+}
