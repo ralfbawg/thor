@@ -9,10 +9,14 @@ server:
   apipath: /api
 db:
 #  url: jdbc://127.0.0.1:3306/test
-  host: 192.168.134.129
-  port: 3306
-  dbname: thor
-  username: thor
+#  host: 192.168.134.129
+  host: 14.17.108.89
+#  port: 3306
+  port: 4001
+#  dbname: thor
+  dbname: yyweb_new
+#  username: thor
+  username: yymz
   password: thor
   dbtype: mysql
 

@@ -18,6 +18,9 @@ type WsApp struct {
 }
 
 func (app *WsApp) AddClient(taskId int, uid string, con *websocket.Conn) {
+	if app.Tasks[taskId] == nil {
+		app.Tasks[taskId] = NewWsTask(app)
+	}
 	task := app.Tasks[taskId]
 	task.AddClient(app.appId, con)
 }
