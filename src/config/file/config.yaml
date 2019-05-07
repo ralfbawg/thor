@@ -17,6 +17,7 @@ db:
   dbname: yyweb_new
 #  username: thor
   username: yymz
-  password: thor
+#  password: thor
+  password: 29S41qeMZl
   dbtype: mysql
 
