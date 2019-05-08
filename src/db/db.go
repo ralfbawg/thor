@@ -20,7 +20,7 @@ func InitDb(host string, port string, dbname string, username string, password s
 		DbType:   dbtype,
 	}
 	db.Init()
-	//db.GetDb().Sync2(new(pojo.TblThorApp))
+	db.GetDb().Sync2(new(pojo.TblThorApp))
 	//result := &pojo.TblThorApp{}
 	//db.GetDb().ShowSQL(true)
 
