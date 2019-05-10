@@ -55,7 +55,7 @@ func BenchmarkSyncmap(b *testing.B) { //0.04 ns/op
 }
 func BenchmarkSyncmap2(b *testing.B) { //0.04 ns/op
 	b.ReportAllocs()
-	m := New()
+	m := NewConcMap()
 
 	for i := 0; i < countStep; i++ {
 		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
@@ -72,36 +72,26 @@ func BenchmarkSyncmap2(b *testing.B) { //0.04 ns/op
 	//})
 	fmt.Printf("get cm4 count = %d\n", count)
 }
-func BenchmarkSyncmap3(b *testing.B) { //0.04 ns/op
-	b.ReportAllocs()
-	m := New()
-
-	for i := 0; i < countStep; i++ {
-		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
-	}
-	count := 0
-	//for t:= range m.IterBuffered(){
-	//	tcount, _ := strconv.Atoi(t.Val.(Animal).name)
-	//	count += tcount
-	//}
-
-	m.IterCb(func(key string, v interface{}) {
-		tcount, _ := strconv.Atoi(v.(Animal).name)
-		count += tcount
-	})
-	fmt.Printf("get cm5 count = %d\n", count)
-}
-
-//func BenchmarkGood(b *testing.B) { //0.04 ns/op
+//func BenchmarkSyncmap3(b *testing.B) { //0.04 ns/op
 //	b.ReportAllocs()
+//	m := NewConcMap()
 //
-//	count := 0
 //	for i := 0; i < countStep; i++ {
-//		count += i
+//		m.Set(strconv.Itoa(i), Animal{strconv.Itoa(i)})
 //	}
+//	count := 0
+//	//for t:= range m.IterBuffered(){
+//	//	tcount, _ := strconv.Atoi(t.Val.(Animal).name)
+//	//	count += tcount
+//	//}
 //
-//	fmt.Printf("get cm4 count = %d\n", count)
+//	m.IterCb(func(key string, v interface{}) {
+//		tcount, _ := strconv.Atoi(v.(Animal).name)
+//		count += tcount
+//	})
+//	//fmt.Printf("get cm5 count = %d\n", count)
 //}
+
 
 type Animal struct {
 	name string

@@ -10,3 +10,7 @@ type TblThorApp struct {
 	Created    time.Time `xorm:"created"`
 	Updated    time.Time `xorm:"updated"`
 }
+
+func ()  {
+	
+}
