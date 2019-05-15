@@ -1,3 +1,6 @@
+app:
+  name: thor
+  host: 127.0.0.1,192.168.0.1
 common:
   env: dev
 log:
@@ -7,6 +10,10 @@ server:
   port: 8888
   wspath: /ws
   apipath: /api
+  short:
+    port: 8889
+  long:
+    port: 8890
 db:
 #  url: jdbc://127.0.0.1:3306/test
 #  host: 192.168.134.129

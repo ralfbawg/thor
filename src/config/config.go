@@ -19,6 +19,10 @@ type Configure struct {
 		Port           string `yaml:"port"`
 		WsServicePath  string `yaml:"wspath"`
 		ApiServicePath string `yaml:"apipath"`
+		Tcp struct {
+			Short string `yaml:"short"`
+			Long  string `yaml:"long"`
+		}
 	}
 	Db struct {
 		Host     string `yaml:"host"`

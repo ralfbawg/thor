@@ -11,6 +11,3 @@ type TblThorApp struct {
 	Updated    time.Time `xorm:"updated"`
 }
 
-func ()  {
-	
-}

@@ -15,10 +15,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/panjf2000/ants"
-	"runtime"
-	"encoding/json"
-	"io"
-	"io/ioutil"
+	"net"
+	"time"
 )
 
 const (
@@ -60,8 +58,26 @@ func startHttpServer() {
 	logging.Info("http server 启动成功")
 }
 func startTcpServer() {
+	startShortLinkServer()
+	startKeepLiveLinkServer()
 	logging.Info("start tcp server")
+}
+func startShortLinkServer() {
 
+}
+func startKeepLiveLinkServer() {
+	tempConfig, _ := config.ConfigStore.GetConfig(false)
+	tcpAddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:"+tempConfig.Server.Tcp.Long)
+	tcpListener, _ := net.ListenTCP("tcp", tcpAddr)
+	defer tcpListener.Close()
+	for {
+		conn, err := tcpListener.Accept()
+		if err != nil {
+			continue
+		}
+		conn.SetReadDeadline(time.Now().Add(time.Duration(10) * time.Second))
+		ants.Submit(conn.)
+	}
 }
 func (c *serverManager) WsHandler(w http.ResponseWriter, r *http.Request) {
 	websocket2.WsDispatcher(w, r)
@@ -93,34 +109,6 @@ func (c *serverManager) DebugHandler(w http.ResponseWriter, r *http.Request) {
 
 	//logging.Debug("process api")
 }
-
-type DiagnoseStat struct {
-	Alloc    float64 `json:"alloc"`
-	Inuse    float64 `json:"inuse"`
-	Idle     float64 `json:"idle"`
-	Sys      float64 `json:"sys"`
-	Released float64 `json:"released"`
-}
-
-// 诊断信息 （内存 CPU）
-func (c *serverManager) DiagnoseHandler(w http.ResponseWriter, r *http.Request) {
-	stats := &runtime.MemStats{}
-	runtime.ReadMemStats(stats)
-	diagnoseStat := &DiagnoseStat{
-		Alloc:    float64(stats.HeapAlloc),    // 对内存分配到对象的内存空间
-		Inuse:    float64(stats.HeapInuse),    // 被占用的堆内存空间
-		Idle:     float64(stats.HeapIdle),     // 空闲的内存空间
-		Sys:      float64(stats.HeapSys),      // 向操作系统拿的总堆空间
-		Released: float64(stats.HeapReleased), // 释放给操作系统的内存空间
-	}
-	ret, err := json.Marshal(diagnoseStat)
-	if err == nil {
-		w.Write(ret)
-	}
-	io.Copy(ioutil.Discard, r.Body)
-	r.Body.Close()
-}
-
 
 func handlerAdapter(w http.ResponseWriter, r *http.Request) {
 	paths := strings.Split(r.RequestURI, "/")
