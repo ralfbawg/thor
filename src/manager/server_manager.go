@@ -17,6 +17,7 @@ import (
 	"github.com/panjf2000/ants"
 	"net"
 	"time"
+	"tcp"
 )
 
 const (
@@ -69,14 +70,13 @@ func startKeepLiveLinkServer() {
 	tempConfig, _ := config.ConfigStore.GetConfig(false)
 	tcpAddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:"+tempConfig.Server.Tcp.Long)
 	tcpListener, _ := net.ListenTCP("tcp", tcpAddr)
-	defer tcpListener.Close()
 	for {
 		conn, err := tcpListener.Accept()
 		if err != nil {
 			continue
 		}
 		conn.SetReadDeadline(time.Now().Add(time.Duration(10) * time.Second))
-		ants.Submit(conn.)
+		ants.Submit(tcp.HanlderConc(conn))
 	}
 }
 func (c *serverManager) WsHandler(w http.ResponseWriter, r *http.Request) {
