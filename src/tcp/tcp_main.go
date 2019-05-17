@@ -7,6 +7,7 @@ import (
 	"common/logging"
 	"bytes"
 	"util"
+	"github.com/panjf2000/ants"
 )
 
 const (
@@ -15,28 +16,26 @@ const (
 )
 
 var (
-	newline       = []byte{'\n'}
-	space         = []byte{' '}
-	bindClients   = util.NewConcMap()
-	unbindClients = util.NewConcMap()
+	tcpCPoolExtendFactor       = 0.8
+	tcpCPoolDefaultSize        = 10000
+	tcpCPool, _                = ants.NewPool(tcpCPoolDefaultSize)
+	funcs                      = make([]func(), 0)
+	newline                    = []byte{'\n'}
+	space                      = []byte{' '}
+	bindClients, unbindClients = util.NewConcMap(), util.NewConcMap()
 )
 
-type TcpMsg struct {
-	appId string
-	uri   string
-	uid   string
-	data  []byte
-}
-type TcpClient struct {
-	ConnectType string
-	conn        net.Conn
-	appId       string
-	taskId      int64
-	uid         string
+func (c *TcpClient) run() {
+	util.SubmitTaskAndResize(tcpCPool, tcpCPoolDefaultSize, tcpCPoolExtendFactor, append(funcs[:0], c.Write, c.Read))
 }
 
 func (c *TcpClient) Write(msg []byte) {
-	c.conn.Write(msg)
+	for {
+		select {
+			msg := <-c.send
+			c.conn.
+		}
+	}
 }
 func (c *TcpClient) Read() []byte {
 	var message [1]byte
@@ -57,11 +56,11 @@ func (c *TcpClient) Read() []byte {
 	return msgB
 }
 
-func ProcessTcpMsg(msg []byte) {
+func ProcessTcpMsg(msg []byte) *TcpMsg {
 	reqMsg := &TcpMsg{}
 	err := json.Unmarshal(msg, reqMsg)
 	if err == nil {
-		return
+		return reqMsg
 	}
 
 }
@@ -75,11 +74,17 @@ func UnmarshalMsg(msg []byte) (*TcpMsg, error) {
 	}
 
 }
-func HanlderConc(conn net.Conn) {
-	client := wrapConc(conn)
+func HandlerConn(conn *net.Conn, ip string) {
+	tcpClient := wrapConc(conn, ip)
+	unbindClients.Set(ip, tcpClient)
 }
-func wrapConc(conn net.Conn) *TcpClient {
+func wrapConc(conn *net.Conn, ip string) *TcpClient {
 	return &TcpClient{
 		conn: conn,
+		ip:   ip,
 	}
+}
+
+func MainEntrance(conn net.Conn, ip string) {
+
 }

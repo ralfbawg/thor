@@ -72,11 +72,12 @@ func startKeepLiveLinkServer() {
 	tcpListener, _ := net.ListenTCP("tcp", tcpAddr)
 	for {
 		conn, err := tcpListener.Accept()
+		ip := conn.RemoteAddr().String()
 		if err != nil {
 			continue
 		}
-		conn.SetReadDeadline(time.Now().Add(time.Duration(10) * time.Second))
-		ants.Submit(tcp.HanlderConc(conn))
+		//conn.SetReadDeadline(time.Now().Add(time.Duration(10) * time.Second))
+		tcp.MainEntrance(conn,ip)
 	}
 }
 func (c *serverManager) WsHandler(w http.ResponseWriter, r *http.Request) {

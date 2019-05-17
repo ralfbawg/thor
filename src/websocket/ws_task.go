@@ -64,8 +64,8 @@ func (task *WsTask) AddClient(uid string, conn *ws.Conn) *WsTaskClient {
 	}
 	client.task.register <- client
 
-	submitTaskAndResize(wrPool, append(funcs[:0], client.readGoroutine, client.writeGoroutine)) //fixme funcs有可能有同步问题
-	client.Send([]byte(hiMesaage + "," + client.uid)) //fixme 第一次连接发送，方便测试
+	util.SubmitTaskAndResize(wrPool, wrPoolDefaultSize, wrPoolExtendFactor, append(funcs[:0], client.readGoroutine, client.writeGoroutine)) //fixme funcs有可能有同步问题
+	client.Send([]byte(hiMesaage + "," + client.uid))                                                                                       //fixme 第一次连接发送，方便测试
 	return client
 }
 
@@ -202,14 +202,4 @@ func timeTask(t time.Duration, count int, f func(param ...interface{})) {
 			}
 		}
 	}()
-}
-
-func submitTaskAndResize(pool *ants.Pool, f []func()) {
-	if float64(pool.Running())/float64(wrPoolDefaultSize) > wrPoolExtendFactor {
-		wrPoolDefaultSize *= 2
-		pool.Tune(wrPoolDefaultSize)
-	}
-	for _, v := range f {
-		pool.Submit(v)
-	}
 }
