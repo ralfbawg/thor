@@ -55,3 +55,7 @@ func NewWsApp(wsManager *WsManager, appId string) (*WsApp, error) {
 func (app *WsApp) GetAppId() string {
 	return app.appId
 }
+
+func (app *WsApp) processMsg(msg []byte) {
+
+}

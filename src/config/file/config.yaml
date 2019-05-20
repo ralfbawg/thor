@@ -10,10 +10,8 @@ server:
   port: 8888
   wspath: /ws
   apipath: /api
-  short:
+  tcp:
     port: 8889
-  long:
-    port: 8890
 db:
 #  url: jdbc://127.0.0.1:3306/test
 #  host: 192.168.134.129

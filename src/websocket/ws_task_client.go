@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"common/logging"
 	"github.com/gorilla/websocket"
-	"log"
 	"time"
 )
 
@@ -61,15 +60,14 @@ func (c *WsTaskClient) readGoroutine() {
 
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
 				logging.Info("error: %v", err)
 			}
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		//logging.Debug("the msg type is %d", msgType)
-		c.send <- []byte(helloMessage)
-
+		//c.send <- []byte(helloMessage)
+		c.task.app.processMsg(message)
 		//logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }

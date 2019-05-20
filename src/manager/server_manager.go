@@ -16,7 +16,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/panjf2000/ants"
 	"net"
-	"time"
 	"tcp"
 )
 
@@ -68,7 +67,8 @@ func startShortLinkServer() {
 }
 func startKeepLiveLinkServer() {
 	tempConfig, _ := config.ConfigStore.GetConfig(false)
-	tcpAddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:"+tempConfig.Server.Tcp.Long)
+	//tcpAddr, _ := net.ResolveTCPAddr("tcp", "127.0.0.1:"+tempConfig.Server.Tcp.Port)
+	tcpAddr, _ := net.ResolveTCPAddr("tcp4", ":"+tempConfig.Server.Tcp.Port)
 	tcpListener, _ := net.ListenTCP("tcp", tcpAddr)
 	for {
 		conn, err := tcpListener.Accept()
@@ -77,7 +77,7 @@ func startKeepLiveLinkServer() {
 			continue
 		}
 		//conn.SetReadDeadline(time.Now().Add(time.Duration(10) * time.Second))
-		tcp.MainEntrance(conn,ip)
+		tcp.MainEntrance(conn, ip)
 	}
 }
 func (c *serverManager) WsHandler(w http.ResponseWriter, r *http.Request) {
