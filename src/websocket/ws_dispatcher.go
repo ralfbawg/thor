@@ -9,6 +9,7 @@ import (
 	"time"
 	"github.com/panjf2000/ants"
 	"util"
+	"tcp"
 )
 
 var manager *WsManager
@@ -37,21 +38,21 @@ func GetWsManager() *WsManager {
 	return manager
 }
 
-func (m *WsManager) Broadcast(appId string, taskId int, msg string) {
+func (m *WsManager) Broadcast(appId string, taskId int, msg []byte) {
 	if m.CheckAuth(appId) {
 		return
 	}
 	if appId == "" {
-		m.totalBroadcast <- []byte(msg)
+		m.totalBroadcast <- msg
 	} else {
 		app, ok := m.apps.Get(appId)
 		if ok && app != nil {
-			app.(*WsApp).Broadcast([]byte(msg))
+			app.(*WsApp).Broadcast(msg)
 		}
 	}
 }
 func (m *WsManager) CheckAuth(appId string) bool {
-	return false
+	return true
 }
 
 func WsManagerInit() {
@@ -61,6 +62,7 @@ func WsManagerInit() {
 		register:       make(chan *WsApp, 1000),
 		CCountC:        make(chan int64, 100),
 	}
+	tcp.TcpManagerInst.SetBroadcast(WsBroadcast)
 	ants.Submit(func() {
 		for {
 			select {
@@ -161,12 +163,13 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 /*
 广播主入口
 */
-func WsBroadcast(appId string, taskId int, uid string, msg string) {
+func WsBroadcast(appId string, taskId int, uid string, msg []byte) {
 	logging.Debug("param appid=%s,taskId=%d,uid=%s", appId, taskId, uid)
-
-	if app, _ := GetWsManager().apps.Get(appId); appId != "" && uid != "" { //单播
+	if appId == "" {
+		return
+	} else if app, _ := GetWsManager().apps.Get(appId); app != nil && uid != "" { //单播
 		task := GetWsManager().GetOrCreateTask(app.(*WsApp), taskId)
-		task.GetClient(uid).Send([]byte(msg))
+		task.GetClient(uid).Send(msg)
 	} else {
 		GetWsManager().Broadcast(appId, taskId, msg)
 	}

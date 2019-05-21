@@ -4,28 +4,18 @@ import (
 	"encoding/json"
 	"net"
 	"github.com/panjf2000/ants"
+	"common/logging"
 )
 
 const (
-	CONNECT_TYPE_SHORT = iota
-	CONNECT_TYPE_LONG  
+	TCP_MSG_TYPE_SUB       = iota
+	TCP_MSG_TYPE_BROADCAST
+	TCP_MSG_TYPE_UNICAST
+	TCP_MSG_TYPE_PING      = 100
+	TCP_MSG_TYPE_PONG      = 101
+	TCP_MSG_TYPE_CLOSE     = 110
 )
 
-func ProcessTcpMsg(msg []byte) *TcpMsg {
-	reqMsg := &TcpMsg{}
-	err := json.Unmarshal(msg, reqMsg)
-	if err == nil {
-		switch reqMsg.Header.MsgType {
-		//0:订阅 1:广播 2:单播 110:断掉客户端长连接
-		case 0:
-		case 1:
-		case 2:
-		case 110:
-
-		}
-	}
-	return nil
-}
 func UnmarshalMsg(msg []byte) (*TcpMsg, error) {
 	reqMsg := &TcpMsg{}
 	json.Marshal(reqMsg.Header)
@@ -46,6 +36,8 @@ func wrapConc(conn net.Conn, ip string) *TcpClient {
 	return &TcpClient{
 		conn: conn,
 		ip:   ip,
+		send: make(chan []byte, 100),
+		read: make(chan []byte, 100),
 	}
 }
 
@@ -53,6 +45,10 @@ func MainEntrance(conn net.Conn, ip string) {
 	HandlerConn(conn, ip)
 }
 
-func good() {
-
+func SendMsg(appId string, msg []byte) {
+	a := bindClients.Keys()
+	logging.Info("%s", a)
+	if v, ok := bindClients.Get(appId); ok {
+		v.(*TcpClient).send <- msg
+	}
 }

@@ -7,11 +7,12 @@ type TcpMsg struct {
 	Body   TcpMsgBody   `json:"body"`
 }
 type TcpMsgHeader struct {
-	MsgType int    `json:"type"`
-	AppId   string `json:"appId"`
-	AppKey  string `json:"appKey"`
-	TaskId  string `json:"taskId"`
-	Uid     string `json:"uid"`
+	MsgType   int    `json:"type"`
+	AppId     string `json:"appId"`
+	AppKey    string `json:"appKey"`
+	TaskId    int    `json:"taskId"`
+	Uid       string `json:"uid"`
+	RequestId string `json:"requestId"`
 }
 type TcpMsgBody struct {
 	Uri  string `json:"uri"`
@@ -21,7 +22,7 @@ type TcpClient struct {
 	ConnectType string
 	conn        net.Conn
 	appId       string
-	taskId      int64
+	taskId      int
 	uid         string
 	ip          string
 	send        chan []byte

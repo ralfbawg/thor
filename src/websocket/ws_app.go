@@ -5,6 +5,7 @@ import (
 	"common/logging"
 	"time"
 	"github.com/gorilla/websocket"
+	"tcp"
 )
 
 type WsApp struct {
@@ -57,5 +58,5 @@ func (app *WsApp) GetAppId() string {
 }
 
 func (app *WsApp) processMsg(msg []byte) {
-
+	tcp.SendMsg(app.appId, msg)
 }
