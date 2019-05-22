@@ -3,8 +3,8 @@ package tcp
 import "net"
 
 type TcpMsg struct {
-	Header TcpMsgHeader `json:"header"`
-	Body   TcpMsgBody   `json:"body"`
+	Header *TcpMsgHeader          `json:"header"`
+	Body   map[string]interface{} `json:"body"`
 }
 type TcpMsgHeader struct {
 	MsgType   int    `json:"type"`
@@ -14,10 +14,11 @@ type TcpMsgHeader struct {
 	Uid       string `json:"uid"`
 	RequestId string `json:"requestId"`
 }
-type TcpMsgBody struct {
-	Uri  string `json:"uri"`
-	Data []byte `json:"data"`
-}
+
+//type TcpMsgBody struct {
+//	Uri  string `json:"uri"`
+//	Data string `json:"data"`
+//}
 type TcpClient struct {
 	ConnectType string
 	conn        net.Conn

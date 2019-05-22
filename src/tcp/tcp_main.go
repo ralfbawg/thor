@@ -49,6 +49,23 @@ func SendMsg(appId string, msg []byte) {
 	a := bindClients.Keys()
 	logging.Info("%s", a)
 	if v, ok := bindClients.Get(appId); ok {
-		v.(*TcpClient).send <- msg
+		//if _, ok := bindClients.Get(appId); !ok {
+		c := v.(*TcpClient)
+
+		tcpMsg := &TcpMsg{
+			Header: &TcpMsgHeader{},
+			Body:   make(map[string]interface{}),
+		}
+		json.Unmarshal(msg, &tcpMsg.Body)
+		tcpMsg.Header.AppId = c.appId
+		tcpMsg.Header.TaskId = c.taskId
+		tcpMsg.Header.Uid = c.uid
+		resultB, err := json.Marshal(tcpMsg)
+		if err == nil {
+			c.send <- resultB
+		} else {
+			c.send <- []byte("哦活，出错了")
+		}
+		logging.Info("%s", resultB)
 	}
 }
