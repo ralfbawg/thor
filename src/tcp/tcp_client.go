@@ -21,6 +21,7 @@ var (
 )
 
 func (c *TcpClient) run() {
+
 	util.SubmitTaskAndResize(tcpCPool, tcpCPoolDefaultSize, tcpCPoolExtendFactor, append(funcs[:0], c.Write, c.Read))
 }
 
@@ -56,7 +57,8 @@ func (c *TcpClient) Read() {
 			break
 		} else {
 			logging.Info("got %v; want %v", err, io.EOF)
-			continue
+			c.close()
+			break
 		}
 
 	}

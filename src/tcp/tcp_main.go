@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	TCP_MSG_TYPE_SUB       = iota
+	TCP_MSG_TYPE_NORMAL    = iota
+	TCP_MSG_TYPE_SUB
 	TCP_MSG_TYPE_BROADCAST
 	TCP_MSG_TYPE_UNICAST
 	TCP_MSG_TYPE_PING      = 100

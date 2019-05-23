@@ -11,7 +11,7 @@ const (
 
 type WsListenerI interface {
 	OnEvent(event int)
-	Register(f func(a interface{}))
+	Register(f func(a ...interface{}))
 }
 
 type BaseWsListener struct {
@@ -24,18 +24,29 @@ func NewWsListener() *BaseWsListener {
 		listeners: util.NewConcMap(),
 	}
 }
-func (l *BaseWsListener) OnEvent(event int) {
+func (l *BaseWsListener) OnEvent(appId string, event int, ext ...interface{}) {
+	funcs := make([]func(i ...interface{}), 0)
+	if tmp, ok := l.listeners.Get(appId); ok {
+		funcs = tmp.([]func(i ...interface{}))
+	}
 	switch event {
 	case WS_EVENT_CONNECTED:
+	case WS_EVENT_CLOSE:
+		for _, fun := range funcs {
+			fun(event)
+		}
 	case WS_EVENT_READ:
 	case WS_EVENT_WRITE:
-	case WS_EVENT_CLOSE:
-
+		for _, fun := range funcs {
+			fun(event, ext)
+		}
 	}
 }
-func (l *BaseWsListener) Register(appId string, f func(a interface{})) {
-
-	if tmp, ok := l.listeners.Get(appId);ok {
-		tmpA := tmp.([]func)
+func (l *BaseWsListener) Register(appId string, f ...func(a ...interface{})) {
+	if tmp, ok := l.listeners.Get(appId); ok {
+		funcs := tmp.([]func(i ...interface{}))
+		f = append(funcs, f...)
 	}
+	l.listeners.Set(appId, f)
+
 }
