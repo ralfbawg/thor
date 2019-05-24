@@ -9,6 +9,8 @@ const (
 	WS_EVENT_CLOSE
 )
 
+var Wslisteners = NewWsListener()
+
 type WsListenerI interface {
 	OnEvent(event int)
 	Register(f func(a ...interface{}))

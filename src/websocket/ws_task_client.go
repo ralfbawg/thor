@@ -43,7 +43,10 @@ var (
 )
 
 func (c *WsTaskClient) readGoroutine() {
+	Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_CONNECTED)
+
 	defer func() {
+		Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_CLOSE)
 		logging.Debug("defer client uid=%s", c.uid)
 		c.task.unregister <- c
 		c.conn.Close()
@@ -65,6 +68,7 @@ func (c *WsTaskClient) readGoroutine() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_READ, message)
 		//logging.Debug("the msg type is %d", msgType)
 		//c.send <- []byte(helloMessage)
 		c.task.app.processMsg(message)
@@ -88,7 +92,7 @@ func (c *WsTaskClient) writeGoroutine() {
 		case message, ok := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
-				// The hub closed the channel.
+				// The manager closed the channel.
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -98,13 +102,13 @@ func (c *WsTaskClient) writeGoroutine() {
 				return
 			}
 			w.Write(message)
-
+			Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_WRITE, message)
 			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
-			}
+			//n := len(c.send)
+			//for i := 0; i < n; i++ {
+			//	w.Write(newline)
+			//	w.Write(<-c.send)
+			//}
 
 			if err := w.Close(); err != nil {
 				return
