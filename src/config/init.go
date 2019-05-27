@@ -3,7 +3,7 @@ package config
 import (
 	"common/logging"
 	"monitor"
-	"websocket"
+	"comet/websocket"
 	"db"
 )
 

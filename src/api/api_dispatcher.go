@@ -13,7 +13,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"websocket"
+	"comet/websocket"
 )
 
 var server = new(ApiDispatchServer)

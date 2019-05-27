@@ -1,6 +1,6 @@
 package statistics
 
-import "websocket"
+import "comet/websocket"
 
 func GetTaskCount() int64 {
 	return websocket.GetWsManager().GetTaskCount()

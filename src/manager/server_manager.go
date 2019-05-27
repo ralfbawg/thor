@@ -11,12 +11,12 @@ import (
 	"runtime/debug"
 	"strings"
 	"util"
-	websocket2 "websocket"
+	websocket2 "comet/websocket"
 
 	"github.com/gorilla/websocket"
 	"github.com/panjf2000/ants"
 	"net"
-	"tcp"
+	"comet/tcp"
 )
 
 const (

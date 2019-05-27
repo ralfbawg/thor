@@ -5,7 +5,7 @@ import (
 	"common/logging"
 	"time"
 	"github.com/gorilla/websocket"
-	"tcp"
+	"comet/tcp"
 )
 
 type WsApp struct {

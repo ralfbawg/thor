@@ -9,7 +9,7 @@ import (
 	"time"
 	"github.com/panjf2000/ants"
 	"util"
-	"tcp"
+	"comet/tcp"
 )
 
 var manager *WsManager
