@@ -92,7 +92,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 
 		}
 	} else {
-		logging.Error("[GetResponseInfo] Failed, %s,", err.Error())
+		logging.Error("[ProcessTcpMsg] Failed, %s,", err.Error())
 	}
 
 	backMsg, err := json.Marshal(reqMsg)
