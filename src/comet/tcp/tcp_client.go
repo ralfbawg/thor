@@ -8,6 +8,7 @@ import (
 	"io"
 	"encoding/json"
 	"task"
+	"sync"
 )
 
 var (
@@ -19,6 +20,11 @@ var (
 	space                      = []byte{' '}
 	bindClients, unbindClients = util.NewConcMap(), util.NewConcMap()
 )
+var bytePool = &sync.Pool{
+	New: func() interface{} {
+		return make([]byte, 256)
+	},
+}
 
 func (c *TcpClient) run() {
 
@@ -35,22 +41,23 @@ func (c *TcpClient) Write() {
 }
 func (c *TcpClient) Read() {
 	for {
-		b := make([]byte, 256)
+		b := bytePool.Get().([]byte)
 		n, err := c.conn.Read(b)
 		if n != 0 {
 			b = bytes.TrimSpace(b)
-			bs := make([][]byte, 1)
+			var bs [][]byte
 			if bytes.Contains(b, newline) {
 				bs = bytes.Split(b, newline)
 			} else {
-				bs[0] = b
+				bs = [][]byte{b}
 			}
 			for _, v := range bs {
-				b = v[0:n]
+				b = v[0:]
 				logging.Info("get tcp message %s from %s", string(b), c.ip)
 				c.ProcessTcpMsg(b)
 			}
 			b = b[:0]
+			bytePool.Put(b)
 		} else if err == io.EOF {
 			logging.Info("got %v; want %v", err, io.EOF)
 			c.close()
@@ -89,7 +96,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 		case TCP_MSG_TYPE_PING:
 		case TCP_MSG_TYPE_PONG:
 		case TCP_MSG_TYPE_CLOSE:
-
+			c.close()
 		}
 	} else {
 		logging.Error("[ProcessTcpMsg] Failed, %s,", err.Error())
