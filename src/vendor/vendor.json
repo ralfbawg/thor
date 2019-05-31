@@ -79,6 +79,12 @@
 			"revisionTime": "2019-03-23T13:16:28Z"
 		},
 		{
+			"checksumSHA1": "pz1mlyv8A+oIzufn9f+j2OiBOkQ=",
+			"path": "github.com/smallnest/rpcx",
+			"revision": "8e06f5c7a98c13022f4df3cd4e9dfcb9bb120643",
+			"revisionTime": "2019-04-27T05:27:56Z"
+		},
+		{
 			"path": "go-sql-driver/mysql",
 			"revision": ""
 		},

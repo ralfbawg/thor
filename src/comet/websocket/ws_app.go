@@ -23,7 +23,7 @@ func (app *WsApp) AddClient(taskId int, uid string, con *websocket.Conn) {
 		app.Tasks[taskId] = NewWsTask(app)
 	}
 	task := app.Tasks[taskId]
-	task.AddClient(app.appId, con)
+	task.AddClient(uid, con)
 }
 
 func (app *WsApp) Broadcast(msg []byte) {

@@ -10,15 +10,25 @@ import (
 	"github.com/panjf2000/ants"
 	"util"
 	"comet/tcp"
+	"fmt"
 )
 
 var manager *WsManager
 
 var upgrade = websocket.Upgrader{
-	ReadBufferSize:  1024,
+	ReadBufferSize:  4096,
 	WriteBufferSize: 1024,
 	// 允许跨域
 	CheckOrigin: func(r *http.Request) bool {
+		fmt.Println("i am in checkOrigin")
+		if r.Method != "GET" {
+			fmt.Println("method is not GET")
+			return false
+		}
+		if r.URL.Path != "/ws" {
+			fmt.Println("path error")
+			return false
+		}
 		return true
 	},
 }

@@ -9,7 +9,6 @@ import (
 	"manager"
 	"github.com/panjf2000/ants"
 	"statistics"
-	"game"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,7 +21,7 @@ func main() {
 	logging.Debug("server start")
 	manager.StartServers()
 	ants.Submit(statistics.PrintStatistics)
-	game.GameMallInst.Init()
+	//game.GameMallInst.Init()
 	ChanShutdown := make(chan os.Signal)
 	signal.Ignore(syscall.SIGHUP)
 	<-ChanShutdown
