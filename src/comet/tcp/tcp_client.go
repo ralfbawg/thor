@@ -19,6 +19,7 @@ var (
 	newline                    = []byte{'\n'}
 	space                      = []byte{' '}
 	bindClients, unbindClients = util.NewConcMap(), util.NewConcMap()
+	singalByte                 = make([]byte, 1)[0]
 )
 var bytePool = &sync.Pool{
 	New: func() interface{} {
@@ -52,9 +53,9 @@ func (c *TcpClient) Read() {
 			} else {
 				bs = [][]byte{b}
 			}
-			var a = make([]byte, 1)[0]
+
 			for _, v := range bs {
-				validN := bytes.IndexByte(v, a)
+				validN := bytes.IndexByte(v, singalByte)
 				b = func() []byte {
 					if validN < 0 {
 						return v[0:]
