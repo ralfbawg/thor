@@ -46,17 +46,28 @@ func (c *TcpClient) Read() {
 		if n != 0 {
 			b = bytes.TrimSpace(b)
 			var bs [][]byte
+			//var bs  = [][]byte{b}
 			if bytes.Contains(b, newline) {
 				bs = bytes.Split(b, newline)
 			} else {
 				bs = [][]byte{b}
 			}
+			var a = make([]byte, 1)[0]
 			for _, v := range bs {
-				b = v[0:]
+				validN := bytes.IndexByte(v, a)
+				b = func() []byte {
+					if validN < 0 {
+						return v[0:]
+					} else {
+						return v[0:validN]
+					}
+				}()
+
 				logging.Info("get tcp message %s from %s", string(b), c.ip)
 				c.ProcessTcpMsg(b)
 			}
-			b = b[:0]
+			//b = b[:0]
+			bytes.NewBuffer(b).Reset()
 			bytePool.Put(b)
 		} else if err == io.EOF {
 			logging.Info("got %v; want %v", err, io.EOF)
@@ -85,7 +96,6 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 				c.taskId = reqMsg.Header.TaskId
 				c.uid = reqMsg.Header.Uid
 				TcpManagerInst.bind <- c
-				reqMsg.Header.MsgType = TCP_MSG_TYPE_PONG
 			}
 		case TCP_MSG_TYPE_BROADCAST:
 		case TCP_MSG_TYPE_UNICAST:
@@ -95,6 +105,8 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 			}
 		case TCP_MSG_TYPE_PING:
 		case TCP_MSG_TYPE_PONG:
+			logging.Info("ping pong")
+			reqMsg.Header.MsgType = TCP_MSG_TYPE_PONG
 		case TCP_MSG_TYPE_CLOSE:
 			c.close()
 		}

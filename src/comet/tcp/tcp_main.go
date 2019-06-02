@@ -54,8 +54,7 @@ func SendMsg(appId string, msg []byte) {
 		c := v.(*TcpClient)
 
 		tcpMsg := &TcpMsg{
-			Header: &TcpMsgHeader{},
-			Body:   make(map[string]interface{}),
+
 		}
 		json.Unmarshal(msg, &tcpMsg.Body)
 		tcpMsg.Header.AppId = c.appId

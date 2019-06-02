@@ -3,16 +3,15 @@ package tcp
 import "net"
 
 type TcpMsg struct {
-	Header *TcpMsgHeader          `json:"header"`
-	Body   map[string]interface{} `json:"body"`
-}
-type TcpMsgHeader struct {
-	MsgType   int    `json:"type"`
-	AppId     string `json:"appId"`
-	AppKey    string `json:"appKey"`
-	TaskId    int    `json:"taskId"`
-	Uid       string `json:"uid"`
-	RequestId string `json:"requestId"`
+	Header struct {
+		MsgType   int    `json:"type"`
+		AppId     string `json:"appId"`
+		AppKey    string `json:"appKey"`
+		TaskId    int    `json:"taskId"`
+		Uid       string `json:"uid"`
+		RequestId string `json:"requestId"`
+	} `json:"header"`
+	Body map[string]interface{} `json:"body"`
 }
 
 //type TcpMsgBody struct {
