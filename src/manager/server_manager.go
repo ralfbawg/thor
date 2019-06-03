@@ -89,6 +89,10 @@ func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	//logging.Debug("process api")
 }
+func (c *serverManager) CehckHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("good"))
+	//logging.Debug("process api")
+}
 
 //游戏分发
 func (c *serverManager) GameHandler(w http.ResponseWriter, r *http.Request) {

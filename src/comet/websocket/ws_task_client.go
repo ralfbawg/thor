@@ -24,7 +24,7 @@ const (
 	writeWait = 10 * time.Second
 
 	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
+	pongWait = 3600 * time.Second
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
@@ -71,7 +71,7 @@ func (c *WsTaskClient) readGoroutine() {
 		Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_READ, message)
 		//logging.Debug("the msg type is %d", msgType)
 		//c.send <- []byte(helloMessage)
-		c.task.app.processMsg(message)
+		c.task.app.processMsg(0, c.uid, message)
 		//logging.Debug("id %s get msg: %s",c.id,message)
 	}
 }

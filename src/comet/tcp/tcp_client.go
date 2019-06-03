@@ -42,34 +42,37 @@ func (c *TcpClient) Write() {
 }
 func (c *TcpClient) Read() {
 	for {
-		b := bytePool.Get().([]byte)
+		//b := bytePool.Get().([]byte)
+		b := make([]byte, 256)
 		n, err := c.conn.Read(b)
 		if n != 0 {
 			b = bytes.TrimSpace(b)
-			var bs [][]byte
-			//var bs  = [][]byte{b}
-			if bytes.Contains(b, newline) {
-				bs = bytes.Split(b, newline)
-			} else {
-				bs = [][]byte{b}
-			}
-
-			for _, v := range bs {
-				validN := bytes.IndexByte(v, singalByte)
-				b = func() []byte {
-					if validN < 0 {
-						return v[0:]
-					} else {
-						return v[0:validN]
-					}
-				}()
-
-				logging.Info("get tcp message %s from %s", string(b), c.ip)
-				c.ProcessTcpMsg(b)
-			}
+			//var bs [][]byte
+			////var bs  = [][]byte{b}
+			//if bytes.Contains(b, newline) {
+			//	bs = bytes.Split(b, newline)
+			//} else {
+			//	bs = [][]byte{b}
+			//}
+			//
+			//for _, v := range bs {
+			//	validN := bytes.IndexByte(v, singalByte)
+			//	b = func() []byte {
+			//		if validN < 0 {
+			//			return v[0:]
+			//		} else {
+			//			return v[0:validN]
+			//		}
+			//	}()
+			//
+			//	logging.Info("get tcp message %s from %s", string(b), c.ip)
+			//	c.ProcessTcpMsg(b)
+			//}
+			logging.Info("get tcp message %s from %s", string(b), c.ip)
+			c.ProcessTcpMsg(b[0:n])
 			//b = b[:0]
-			bytes.NewBuffer(b).Reset()
-			bytePool.Put(b)
+			//bytes.NewBuffer(b).Reset()
+			//bytePool.Put(b)
 		} else if err == io.EOF {
 			logging.Info("got %v; want %v", err, io.EOF)
 			c.close()
@@ -99,10 +102,14 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 				TcpManagerInst.bind <- c
 			}
 		case TCP_MSG_TYPE_BROADCAST:
+			msg, _ := json.Marshal(reqMsg.Body)
+			if c.appId != "" {
+				TcpManagerInst.WsBroadcast(c.appId, reqMsg.Header.TaskId, reqMsg.Header.Uid, msg)
+			}
 		case TCP_MSG_TYPE_UNICAST:
 			msg, _ := json.Marshal(reqMsg.Body)
 			if c.appId != "" {
-				TcpManagerInst.WsBroadcast(c.appId, c.taskId, c.uid, msg)
+				TcpManagerInst.WsBroadcast(c.appId, reqMsg.Header.TaskId, reqMsg.Header.Uid, msg)
 			}
 		case TCP_MSG_TYPE_PING:
 		case TCP_MSG_TYPE_PONG:

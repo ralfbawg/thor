@@ -11,6 +11,7 @@ import (
 	"util"
 	"comet/tcp"
 	"fmt"
+	"errors"
 )
 
 var manager *WsManager
@@ -50,16 +51,18 @@ func GetWsManager() *WsManager {
 
 func (m *WsManager) Broadcast(appId string, taskId int, msg []byte) {
 	if m.CheckAuth(appId) {
+		if appId == "" {
+			m.totalBroadcast <- msg
+		} else {
+			app, ok := m.apps.Get(appId)
+			if ok && app != nil {
+				app.(*WsApp).Broadcast(msg)
+			}
+		}
+	} else {
 		return
 	}
-	if appId == "" {
-		m.totalBroadcast <- msg
-	} else {
-		app, ok := m.apps.Get(appId)
-		if ok && app != nil {
-			app.(*WsApp).Broadcast(msg)
-		}
-	}
+
 }
 func (m *WsManager) CheckAuth(appId string) bool {
 	return true
@@ -139,11 +142,22 @@ func (m *WsManager) GetTaskCount() int64 {
 */
 func (m *WsManager) GetOrCreateTask(app *WsApp, taskId int) *WsTask {
 	if task := app.Tasks[taskId]; task == nil {
-		task := NewWsTask(app)
+		task := NewWsTask(app, taskId)
 		app.Tasks[taskId] = task
 		return task
 	} else {
 		return task
+	}
+}
+
+/**
+获取或者新建一个task
+*/
+func (m *WsManager) GetTask(app *WsApp, taskId int) (*WsTask, error) {
+	if task := app.Tasks[taskId]; task != nil {
+		return task, nil
+	} else {
+		return nil, errors.New("没找到task")
 	}
 }
 func (wsManager *WsManager) GetAllClientCount() int64 {
@@ -178,8 +192,10 @@ func WsBroadcast(appId string, taskId int, uid string, msg []byte) {
 	if appId == "" {
 		return
 	} else if app, _ := GetWsManager().apps.Get(appId); app != nil && uid != "" { //单播
-		task := GetWsManager().GetOrCreateTask(app.(*WsApp), taskId)
-		task.GetClient(uid).Send(msg)
+		task, err := GetWsManager().GetTask(app.(*WsApp), taskId)
+		if err == nil {
+			task.GetClient(uid).Send(msg)
+		}
 	} else {
 		GetWsManager().Broadcast(appId, taskId, msg)
 	}

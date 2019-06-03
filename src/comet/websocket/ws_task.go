@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 	"util"
+	"context"
 )
 
 const (
@@ -28,6 +29,8 @@ type WsTask struct {
 
 	clients util.ConcMap
 
+	index int
+
 	// Inbound messages from the clients.
 	broadcast chan []byte
 
@@ -40,6 +43,10 @@ type WsTask struct {
 	clientCount int64
 
 	incr chan int64
+}
+type Ws_context struct {
+	//context内容
+	context.Context
 }
 
 func (task *WsTask) AddClient(uid string, conn *ws.Conn) *WsTaskClient {
@@ -111,10 +118,11 @@ func (task *WsTask) Init() string {
 	return task.appId
 }
 
-func NewWsTask(app *WsApp) *WsTask {
+func NewWsTask(app *WsApp, index int) *WsTask {
 	task := &WsTask{
 		appId: app.appId,
 		app:   app,
+		index: index,
 		//clients:      make(map[*WsTaskClient]bool),
 		clients: util.NewConcMap(),
 		//clientsIndex: util.NewConcurrentMap(),

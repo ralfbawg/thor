@@ -46,7 +46,7 @@ func MainEntrance(conn net.Conn, ip string) {
 	HandlerConn(conn, ip)
 }
 
-func SendMsg(appId string, msg []byte) {
+func SendMsg(appId string, taskId int, uid string, msg []byte) {
 	a := bindClients.Keys()
 	logging.Info("%s", a)
 	if v, ok := bindClients.Get(appId); ok {
@@ -54,12 +54,12 @@ func SendMsg(appId string, msg []byte) {
 		c := v.(*TcpClient)
 
 		tcpMsg := &TcpMsg{
-
+			Body: make(map[string]interface{}),
 		}
 		json.Unmarshal(msg, &tcpMsg.Body)
-		tcpMsg.Header.AppId = c.appId
-		tcpMsg.Header.TaskId = c.taskId
-		tcpMsg.Header.Uid = c.uid
+		tcpMsg.Header.AppId = appId
+		tcpMsg.Header.TaskId = taskId
+		tcpMsg.Header.Uid = uid
 		resultB, err := json.Marshal(tcpMsg)
 		if err == nil {
 			c.send <- resultB
