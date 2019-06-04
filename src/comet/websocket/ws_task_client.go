@@ -30,7 +30,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 1024 * 10
 
 	hiMesaage = "hi"
 
@@ -42,15 +42,16 @@ var (
 	space   = []byte{' '}
 )
 
+func (c *WsTaskClient) Close() {
+	Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_CLOSE)
+	logging.Debug("defer client uid=%s", c.uid)
+	c.task.unregister <- c
+	c.conn.Close()
+}
 func (c *WsTaskClient) readGoroutine() {
-	Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_CONNECTED)
+	Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_CONNECTED)
 
-	defer func() {
-		Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_CLOSE)
-		logging.Debug("defer client uid=%s", c.uid)
-		c.task.unregister <- c
-		c.conn.Close()
-	}()
+	defer c.Close()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -68,7 +69,7 @@ func (c *WsTaskClient) readGoroutine() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_READ, message)
+		Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_READ, message)
 		//logging.Debug("the msg type is %d", msgType)
 		//c.send <- []byte(helloMessage)
 		c.task.app.processMsg(0, c.uid, message)
@@ -80,12 +81,8 @@ func (c *WsTaskClient) writeGoroutine() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		c.Close()
 	}()
-
-	//if w, err := c.conn.NextWriter(websocket.TextMessage); err == nil {
-	//	w.Write([]byte(helloMessage))
-	//}
 
 	for {
 		select {
@@ -102,7 +99,7 @@ func (c *WsTaskClient) writeGoroutine() {
 				return
 			}
 			w.Write(message)
-			Wslisteners.OnEvent(c.task.app.appId, WS_EVENT_WRITE, message)
+			Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_WRITE, message)
 			// Add queued chat messages to the current websocket message.
 			//n := len(c.send)
 			//for i := 0; i < n; i++ {

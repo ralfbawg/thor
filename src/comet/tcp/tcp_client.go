@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"task"
 	"sync"
+	"time"
 )
 
 var (
@@ -21,14 +22,19 @@ var (
 	bindClients, unbindClients = util.NewConcMap(), util.NewConcMap()
 	singalByte                 = make([]byte, 1)[0]
 )
+
+const (
+	READ_TIME_OUT  = 60 * time.Second
+	WRITE_TIME_OUT = 60 * time.Second
+)
+
 var bytePool = &sync.Pool{
 	New: func() interface{} {
-		return make([]byte, 256)
+		return make([]byte, 1024*8)
 	},
 }
 
 func (c *TcpClient) run() {
-
 	util.SubmitTaskAndResize(tcpCPool, tcpCPoolDefaultSize, tcpCPoolExtendFactor, append(funcs[:0], c.Write, c.Read))
 }
 
@@ -37,13 +43,14 @@ func (c *TcpClient) Write() {
 		select {
 		case msg := <-c.send:
 			c.conn.Write(append(msg, newline...))
+
 		}
 	}
 }
 func (c *TcpClient) Read() {
 	for {
-		//b := bytePool.Get().([]byte)
-		b := make([]byte, 256)
+		b := bytePool.Get().([]byte)
+		//b := make([]byte, 256)
 		n, err := c.conn.Read(b)
 		if n != 0 {
 			b = bytes.TrimSpace(b)
@@ -68,11 +75,10 @@ func (c *TcpClient) Read() {
 			//	logging.Info("get tcp message %s from %s", string(b), c.ip)
 			//	c.ProcessTcpMsg(b)
 			//}
-			logging.Info("get tcp message %s from %s", string(b), c.ip)
+			logging.Info("get tcp message %s from %s", string(b[0:n]), c.ip)
 			c.ProcessTcpMsg(b[0:n])
-			//b = b[:0]
-			//bytes.NewBuffer(b).Reset()
-			//bytePool.Put(b)
+			bytes.NewBuffer(b).Reset()
+			bytePool.Put(b)
 		} else if err == io.EOF {
 			logging.Info("got %v; want %v", err, io.EOF)
 			c.close()
@@ -111,12 +117,11 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 			if c.appId != "" {
 				TcpManagerInst.WsBroadcast(c.appId, reqMsg.Header.TaskId, reqMsg.Header.Uid, msg)
 			}
-		case TCP_MSG_TYPE_PING:
-		case TCP_MSG_TYPE_PONG:
+		case TCP_MSG_TYPE_PING, TCP_MSG_TYPE_PONG:
 			logging.Info("ping pong")
 			reqMsg.Header.MsgType = TCP_MSG_TYPE_PONG
 		case TCP_MSG_TYPE_CLOSE:
-			c.close()
+			c.closeWs(reqMsg.Header.Uid)
 		}
 	} else {
 		logging.Error("[ProcessTcpMsg] Failed, %s,", err.Error())
@@ -133,4 +138,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 }
 func (c *TcpClient) close() {
 	c.conn.Close()
+}
+func (c *TcpClient) closeWs(uid string) {
+	TcpManagerInst.WsCloseHandler(c.appId, 0, uid)
 }

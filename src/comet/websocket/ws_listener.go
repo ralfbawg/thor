@@ -26,19 +26,17 @@ func NewWsListener() *BaseWsListener {
 		listeners: util.NewConcMap(),
 	}
 }
-func (l *BaseWsListener) OnEvent(appId string, event int, ext ...interface{}) {
+func (l *BaseWsListener) TriggerEvent(appId string, event int, ext ...interface{}) {
 	funcs := make([]func(i ...interface{}), 0)
 	if tmp, ok := l.listeners.Get(appId); ok {
 		funcs = tmp.([]func(i ...interface{}))
 	}
 	switch event {
-	case WS_EVENT_CONNECTED:
-	case WS_EVENT_CLOSE:
+	case WS_EVENT_CONNECTED, WS_EVENT_CLOSE:
 		for _, fun := range funcs {
 			fun(event)
 		}
-	case WS_EVENT_READ:
-	case WS_EVENT_WRITE:
+	case WS_EVENT_READ, WS_EVENT_WRITE:
 		for _, fun := range funcs {
 			fun(event, ext)
 		}

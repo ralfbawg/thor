@@ -24,8 +24,8 @@ const (
 )
 
 var upgrade = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  1024 * 10,
+	WriteBufferSize: 1024 * 10,
 	// 允许跨域
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -55,12 +55,12 @@ func startHttpServer() {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-	logging.Info("http server 启动成功")
+	logging.Info("start http server succeed")
 }
 func startTcpServer() {
 	startShortLinkServer()
 	startKeepLiveLinkServer()
-	logging.Info("start tcp server")
+	logging.Info("start tcp server succeed")
 }
 func startShortLinkServer() {
 
@@ -89,7 +89,7 @@ func (c *serverManager) ApiHandler(w http.ResponseWriter, r *http.Request) {
 
 	//logging.Debug("process api")
 }
-func (c *serverManager) CehckHandler(w http.ResponseWriter, r *http.Request) {
+func (c *serverManager) CheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("good"))
 	//logging.Debug("process api")
 }

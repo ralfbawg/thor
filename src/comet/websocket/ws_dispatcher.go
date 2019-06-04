@@ -14,25 +14,26 @@ import (
 	"errors"
 )
 
-var manager *WsManager
-
-var upgrade = websocket.Upgrader{
-	ReadBufferSize:  4096,
-	WriteBufferSize: 1024,
-	// 允许跨域
-	CheckOrigin: func(r *http.Request) bool {
-		fmt.Println("i am in checkOrigin")
-		if r.Method != "GET" {
-			fmt.Println("method is not GET")
-			return false
-		}
-		if r.URL.Path != "/ws" {
-			fmt.Println("path error")
-			return false
-		}
-		return true
-	},
-}
+var (
+	manager *WsManager
+	upgrade = websocket.Upgrader{
+		ReadBufferSize:  4096,
+		WriteBufferSize: 1024,
+		// 允许跨域
+		CheckOrigin: func(r *http.Request) bool {
+			fmt.Println("i am in checkOrigin")
+			//if r.Method != "GET" {
+			//	fmt.Println("method is not GET")
+			//	return false
+			//}
+			//if r.URL.Path != "/ws" {
+			//	fmt.Println("path error")
+			//	return false
+			//}
+			return true
+		},
+	}
+)
 
 type WsManager struct {
 	apps               util.ConcMap
@@ -76,6 +77,7 @@ func WsManagerInit() {
 		CCountC:        make(chan int64, 100),
 	}
 	tcp.TcpManagerInst.SetBroadcast(WsBroadcast)
+	tcp.TcpManagerInst.SetCloseWsHandler(CloseClient)
 	ants.Submit(func() {
 		for {
 			select {
@@ -164,6 +166,18 @@ func (wsManager *WsManager) GetAllClientCount() int64 {
 	return atomic.LoadInt64(&wsManager.ClientCount)
 }
 
+//手动断开连接
+func CloseClient(appId string, taskId int, uid string) {
+	if appId == "" {
+		return
+	} else if app, _ := GetWsManager().apps.Get(appId); app != nil && uid != "" {
+		task, err := GetWsManager().GetTask(app.(*WsApp), taskId)
+		if err == nil {
+			task.GetClient(uid).Close()
+		}
+	}
+}
+
 func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 	//logging.Debug("ws server start")
 	//filter.DoFilter(w, r)
@@ -194,6 +208,7 @@ func WsBroadcast(appId string, taskId int, uid string, msg []byte) {
 	} else if app, _ := GetWsManager().apps.Get(appId); app != nil && uid != "" { //单播
 		task, err := GetWsManager().GetTask(app.(*WsApp), taskId)
 		if err == nil {
+			logging.Debug("find client uid %s exist()", uid, task.GetClient(uid))
 			task.GetClient(uid).Send(msg)
 		}
 	} else {
