@@ -10,8 +10,8 @@ import (
 	"github.com/panjf2000/ants"
 	"util"
 	"comet/tcp"
-	"fmt"
 	"errors"
+	"context"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 		WriteBufferSize: 1024,
 		// 允许跨域
 		CheckOrigin: func(r *http.Request) bool {
-			fmt.Println("i am in checkOrigin")
+			logging.Debug("i am in checkOrigin")
 			//if r.Method != "GET" {
 			//	fmt.Println("method is not GET")
 			//	return false
@@ -44,6 +44,12 @@ type WsManager struct {
 	ClientCount        int64
 	CCountC            chan int64
 	broadcastTokenPool []int
+}
+type WsContext struct {
+	context.Context
+	appId  string
+	taskId int
+	uid    string
 }
 
 func GetWsManager() *WsManager {
@@ -202,13 +208,13 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 广播主入口
 */
 func WsBroadcast(appId string, taskId int, uid string, msg []byte) {
-	logging.Debug("param appid=%s,taskId=%d,uid=%s", appId, taskId, uid)
+	logging.Debug("ws broadcast param appid(%s),taskId(%d),uid(%s),msg(%s)", appId, taskId, uid, msg)
 	if appId == "" {
 		return
 	} else if app, _ := GetWsManager().apps.Get(appId); app != nil && uid != "" { //单播
 		task, err := GetWsManager().GetTask(app.(*WsApp), taskId)
 		if err == nil {
-			logging.Debug("find client uid %s exist()", uid, task.GetClient(uid))
+			logging.Debug("find ws client uid(%s) exist(%v)", uid, task.GetClient(uid) != nil)
 			task.GetClient(uid).Send(msg)
 		}
 	} else {

@@ -8,6 +8,7 @@ import (
 	"time"
 	"util"
 	"context"
+	"fmt"
 )
 
 const (
@@ -72,7 +73,8 @@ func (task *WsTask) AddClient(uid string, conn *ws.Conn) *WsTaskClient {
 	client.task.register <- client
 
 	util.SubmitTaskAndResize(wrPool, wrPoolDefaultSize, wrPoolExtendFactor, append(funcs[:0], client.readGoroutine, client.writeGoroutine)) //fixme funcs有可能有同步问题
-	client.Send([]byte(hiMesaage + "," + client.uid))                                                                                       //fixme 第一次连接发送，方便测试
+	//client.Send([]byte(hiMesaage + "," + client.uid))                                                                                       //fixme 第一次连接发送，方便测试
+	client.Send([]byte(fmt.Sprintf(hiMesaageJson, client.uid)))
 	return client
 }
 

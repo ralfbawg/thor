@@ -29,7 +29,7 @@ func VerifyAppInfo(param url.Values) (string, int, string, bool) {
 	if uid == "" {
 		uid = uuid.Generate().String()
 	}
-	logging.Debug("app id is %s,app key is %s,uid is %s", appId, appKey, uid)
+	logging.Debug("websocket connected,app(%s),appkey(%s),uid (%s)", appId, appKey, uid)
 	return VerifyAppInfo2(appId, taskId, uid, appKey)
 }
 

@@ -1,6 +1,9 @@
 package tcp
 
-import "net"
+import (
+	"net"
+	"context"
+)
 
 type TcpMsg struct {
 	Header struct {
@@ -27,4 +30,9 @@ type TcpClient struct {
 	ip          string
 	send        chan []byte
 	read        chan []byte
+	c           TcpClientContext
+}
+
+type TcpClientContext struct {
+	context.Context
 }

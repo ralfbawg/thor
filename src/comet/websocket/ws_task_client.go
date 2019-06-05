@@ -32,9 +32,9 @@ const (
 	// Maximum message size allowed from peer.
 	maxMessageSize = 1024 * 10
 
-	hiMesaage = "hi"
-
-	helloMessage = "hello"
+	hiMesaage     = "hi"
+	hiMesaageJson = "{\"status\":\"ok\",\"uid\":\"%s\"}"
+	helloMessage  = "hello"
 )
 
 var (
@@ -44,14 +44,18 @@ var (
 
 func (c *WsTaskClient) Close() {
 	Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_CLOSE)
-	logging.Debug("defer client uid=%s", c.uid)
+	logging.Debug("close client uid(%s) by hand", c.uid)
 	c.task.unregister <- c
 	c.conn.Close()
 }
 func (c *WsTaskClient) readGoroutine() {
 	Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_CONNECTED)
-
-	defer c.Close()
+	defer func() {
+		Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_CLOSE)
+		logging.Debug("client uid(%s) closing", c.uid)
+		c.task.unregister <- c
+		c.conn.Close()
+	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -70,7 +74,7 @@ func (c *WsTaskClient) readGoroutine() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_READ, message)
-		//logging.Debug("the msg type is %d", msgType)
+		logging.Debug("receive the websocket client(%s),ip(%s) message:%s ", c.uid, c.GetConn().RemoteAddr().String(), message)
 		//c.send <- []byte(helloMessage)
 		c.task.app.processMsg(0, c.uid, message)
 		//logging.Debug("id %s get msg: %s",c.id,message)
@@ -81,7 +85,7 @@ func (c *WsTaskClient) writeGoroutine() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.Close()
+		c.conn.Close()
 	}()
 
 	for {

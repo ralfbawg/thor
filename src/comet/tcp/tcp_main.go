@@ -5,6 +5,7 @@ import (
 	"net"
 	"github.com/panjf2000/ants"
 	"common/logging"
+	"context"
 )
 
 const (
@@ -34,11 +35,15 @@ func HandlerConn(conn net.Conn, ip string) {
 	ants.Submit(tcpClient.run)
 }
 func wrapConc(conn net.Conn, ip string) *TcpClient {
+	logging.Debug("tcp client connected,ip(%s)", ip)
 	return &TcpClient{
 		conn: conn,
 		ip:   ip,
 		send: make(chan []byte, 100),
 		read: make(chan []byte, 100),
+		c: TcpClientContext{
+			context.TODO(),
+		},
 	}
 }
 
@@ -47,8 +52,7 @@ func MainEntrance(conn net.Conn, ip string) {
 }
 
 func SendMsg(appId string, taskId int, uid string, msg []byte) {
-	a := bindClients.Keys()
-	logging.Info("%s", a)
+	logging.Debug("bind clients contains keys (%s)", bindClients.Keys())
 	if v, ok := bindClients.Get(appId); ok {
 		//if _, ok := bindClients.Get(appId); !ok {
 		c := v.(*TcpClient)
@@ -63,9 +67,10 @@ func SendMsg(appId string, taskId int, uid string, msg []byte) {
 		resultB, err := json.Marshal(tcpMsg)
 		if err == nil {
 			c.send <- resultB
+			logging.Debug("send to tcp client msg(%s)", resultB)
 		} else {
 			c.send <- []byte("哦活，出错了")
 		}
-		logging.Info("%s", resultB)
+
 	}
 }

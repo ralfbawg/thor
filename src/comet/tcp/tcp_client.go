@@ -42,7 +42,10 @@ func (c *TcpClient) Write() {
 	for {
 		select {
 		case msg := <-c.send:
+			logging.Debug("write to tcp client appId=%s,content=%s", c.appId, msg)
 			c.conn.Write(append(msg, newline...))
+			//case c.c.Context.Done():
+			//	return
 
 		}
 	}
@@ -75,16 +78,16 @@ func (c *TcpClient) Read() {
 			//	logging.Info("get tcp message %s from %s", string(b), c.ip)
 			//	c.ProcessTcpMsg(b)
 			//}
-			logging.Info("get tcp message %s from %s", string(b[0:n]), c.ip)
+			logging.Debug("get tcp message %s from %s", string(b[0:n]), c.ip)
 			c.ProcessTcpMsg(b[0:n])
 			bytes.NewBuffer(b).Reset()
 			bytePool.Put(b)
 		} else if err == io.EOF {
-			logging.Info("got %v; want %v", err, io.EOF)
+			logging.Error("got %v; want %v", err, io.EOF)
 			c.close()
 			break
 		} else {
-			logging.Info("got %v; want %v", err, io.EOF)
+			logging.Error("got %v; want %v", err, io.EOF)
 			c.close()
 			break
 		}
@@ -107,18 +110,13 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 				c.uid = reqMsg.Header.Uid
 				TcpManagerInst.bind <- c
 			}
-		case TCP_MSG_TYPE_BROADCAST:
-			msg, _ := json.Marshal(reqMsg.Body)
-			if c.appId != "" {
-				TcpManagerInst.WsBroadcast(c.appId, reqMsg.Header.TaskId, reqMsg.Header.Uid, msg)
-			}
-		case TCP_MSG_TYPE_UNICAST:
+		case TCP_MSG_TYPE_BROADCAST, TCP_MSG_TYPE_UNICAST:
 			msg, _ := json.Marshal(reqMsg.Body)
 			if c.appId != "" {
 				TcpManagerInst.WsBroadcast(c.appId, reqMsg.Header.TaskId, reqMsg.Header.Uid, msg)
 			}
 		case TCP_MSG_TYPE_PING, TCP_MSG_TYPE_PONG:
-			logging.Info("ping pong")
+			logging.Debug("ping/pong")
 			reqMsg.Header.MsgType = TCP_MSG_TYPE_PONG
 		case TCP_MSG_TYPE_CLOSE:
 			c.closeWs(reqMsg.Header.Uid)

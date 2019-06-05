@@ -30,7 +30,10 @@ func (app *WsApp) Broadcast(msg []byte) {
 	start := time.Now()
 	logging.Debug("app id(%s) broadcast start %f", app.appId, start)
 	for _, task := range app.Tasks {
-		task.Broadcast(msg)
+		if task != nil {
+			task.Broadcast(msg)
+		}
+
 	}
 	logging.Debug("app id(%s) broadcast end %f,cost time:%f", app.appId, time.Now(), time.Now().Sub(start).Seconds())
 }
