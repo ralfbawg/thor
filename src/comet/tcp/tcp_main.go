@@ -6,6 +6,8 @@ import (
 	"github.com/panjf2000/ants"
 	"common/logging"
 	"context"
+	"bytes"
+	"errors"
 )
 
 const (
@@ -51,12 +53,12 @@ func MainEntrance(conn net.Conn, ip string) {
 	HandlerConn(conn, ip)
 }
 
-func SendMsg(appId string, taskId int, uid string, msg []byte) {
+func SendMsg(appId string, taskId int, uid string, msg []byte) error {
 	logging.Debug("bind clients contains keys (%s)", bindClients.Keys())
 	if v, ok := bindClients.Get(appId); ok {
 		//if _, ok := bindClients.Get(appId); !ok {
 		c := v.(*TcpClient)
-
+		msg = bytes.Trim(msg, "\"")
 		tcpMsg := &TcpMsg{
 			Body: make(map[string]interface{}),
 		}
@@ -69,8 +71,9 @@ func SendMsg(appId string, taskId int, uid string, msg []byte) {
 			c.send <- resultB
 			logging.Debug("send to tcp client msg(%s)", resultB)
 		} else {
-			c.send <- []byte("哦活，出错了")
+			return errors.New("json解析出错，确定你的json没问题?")
 		}
 
 	}
+	return nil
 }

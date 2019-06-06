@@ -61,5 +61,7 @@ func (app *WsApp) GetAppId() string {
 }
 
 func (app *WsApp) processMsg(taskId int, uid string, msg []byte) {
-	tcp.SendMsg(app.appId, taskId, uid, msg)
+	if err := tcp.SendMsg(app.appId, taskId, uid, msg); err != nil {
+		app.Tasks[taskId].GetClient(uid).Send([]byte(err.Error()))
+	}
 }
