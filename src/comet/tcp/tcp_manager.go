@@ -1,6 +1,9 @@
 package tcp
 
-import "github.com/panjf2000/ants"
+import (
+	"comet/websocket"
+	"github.com/panjf2000/ants"
+)
 
 type TcpManager struct {
 	bind           chan *TcpClient
@@ -17,6 +20,7 @@ func TcpManagerInit() *TcpManager {
 		bind:   make(chan *TcpClient, 10),
 		unbind: make(chan *TcpClient, 10),
 	}
+
 	ants.Submit(m.Run)
 	return m
 }

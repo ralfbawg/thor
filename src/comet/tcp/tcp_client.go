@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"comet/websocket"
 	"github.com/panjf2000/ants"
 	"util"
 	"bytes"
@@ -108,6 +109,9 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 				c.appId = reqMsg.Header.AppId
 				c.taskId = reqMsg.Header.TaskId
 				c.uid = reqMsg.Header.Uid
+				websocket.Wslisteners.Register(reqMsg.Header.AppId, func(a ...interface{}) {
+					
+				})
 				TcpManagerInst.bind <- c
 			}
 		case TCP_MSG_TYPE_BROADCAST, TCP_MSG_TYPE_UNICAST:

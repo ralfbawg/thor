@@ -1,24 +1,50 @@
 package websocket
 
-import "util"
+import (
+	"github.com/panjf2000/ants"
+	"strconv"
+	"util"
+)
 
 const (
+	MAP_KEY_SEPARATOR  = "#"
 	WS_EVENT_CONNECTED = iota
 	WS_EVENT_READ
 	WS_EVENT_WRITE
 	WS_EVENT_CLOSE
 )
 
-var Wslisteners = NewWsListener()
+type WsListeners struct {
+	util.ConcMap
+}
 
 type WsListenerI interface {
-	OnEvent(event int)
+	TriggerEvent(event int)
 	Register(f func(a ...interface{}))
 }
 
-type BaseWsListener struct {
+type WsListener struct {
 	WsListenerI
-	listeners util.ConcMap
+	appId string
+	funcs [][]func(i ...interface{})
+	eventChan chan WsEvent
+}
+
+func (l *WsListener) run() {
+	select {
+	case event := <-l.eventChan:
+		registerFuncs := l.funcs[event.event]
+		for _, eventFunc := range registerFuncs {
+			ants.Submit(func() {
+				eventFunc(event.param)
+			})
+		}
+	}
+}
+
+type WsEvent struct {
+	event int
+	param []interface{}
 }
 
 func NewWsListener() *BaseWsListener {
@@ -26,26 +52,26 @@ func NewWsListener() *BaseWsListener {
 		listeners: util.NewConcMap(),
 	}
 }
-func (l *BaseWsListener) TriggerEvent(appId string, event int, ext ...interface{}) {
-	funcs := make([]func(i ...interface{}), 0)
-	if tmp, ok := l.listeners.Get(appId); ok {
+func (l WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
+	var funcs []func(i ...interface{})
+	if tmp, ok := l.Get(appId); ok {
 		funcs = tmp.([]func(i ...interface{}))
 	}
 	switch event {
 	case WS_EVENT_CONNECTED, WS_EVENT_CLOSE:
 		for _, fun := range funcs {
-			fun(event)
+			fun()
 		}
 	case WS_EVENT_READ, WS_EVENT_WRITE:
 		for _, fun := range funcs {
-			fun(event, ext)
+			fun(ext)
 		}
 	}
 }
-func (l *BaseWsListener) Register(appId string, f ...func(a ...interface{})) {
-	if tmp, ok := l.listeners.Get(appId); ok {
+func (l *WsListeners) Register(appId string, event int, f ...func(a ...interface{})) {
+	if tmp, ok := l.listeners.Get(appId + MAP_KEY_SEPARATOR + strconv.Itoa(event)); ok {
 		funcs := tmp.([]func(i ...interface{}))
-		f = append(funcs, f...)
+		f = append(funcs, f...) //FIXME 同步问题
 	}
 	l.listeners.Set(appId, f)
 
