@@ -1,8 +1,9 @@
 package websocket
 
 import (
+	"common/logging"
+	"context"
 	"github.com/panjf2000/ants"
-	"strconv"
 	"util"
 )
 
@@ -14,8 +15,14 @@ const (
 	WS_EVENT_CLOSE
 )
 
+var WsListenersInst = &WsListeners{
+	util.NewConcMap(),
+	context.Background(),
+}
+
 type WsListeners struct {
 	util.ConcMap
+	context context.Context
 }
 
 type WsListenerI interface {
@@ -27,7 +34,8 @@ type WsListener struct {
 	WsListenerI
 	appId string
 	funcs [][]func(i ...interface{})
-	eventChan chan WsEvent
+	eventChan chan *WsEvent
+	c         context.Context
 }
 
 func (l *WsListener) run() {
@@ -39,6 +47,10 @@ func (l *WsListener) run() {
 				eventFunc(event.param)
 			})
 		}
+	case <-l.c.Done():
+		logging.Debug("WsListener parent context done,i should exit")
+		close(l.eventChan) //不再接收事件
+		return
 	}
 }
 
@@ -47,33 +59,40 @@ type WsEvent struct {
 	param []interface{}
 }
 
-func NewWsListener(appId string) *WsListener {
+func NewWsListener(c context.Context, appId string) *WsListener {
+	context, _ := context.WithCancel(c)
 	return &WsListener{
 		appId:     appId,
-		eventChan: make(chan WsEvent),
+		eventChan: make(chan *WsEvent),
+		c:         context,
+		funcs: make([][]func(params ...interface{}), 10),
 	}
 }
 func (l WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
-	var funcs []func(i ...interface{})
+	var listner *WsListener
 	if tmp, ok := l.Get(appId); ok {
-		funcs = tmp.([]func(i ...interface{}))
+		listner = tmp.(*WsListener)
+		listner.eventChan <- &WsEvent{event: event, param: ext,}
+	} else {
+		logging.Debug("appId %s is not exist", appId)
 	}
-	switch event {
-	case WS_EVENT_CONNECTED, WS_EVENT_CLOSE:
-		for _, fun := range funcs {
-			fun()
-		}
-	case WS_EVENT_READ, WS_EVENT_WRITE:
-		for _, fun := range funcs {
-			fun(ext)
-		}
-	}
+
 }
+
+//注册监听事件
 func (l *WsListeners) Register(appId string, event int, f ...func(a ...interface{})) {
-	if tmp, ok := l.Get(appId + MAP_KEY_SEPARATOR + strconv.Itoa(event)); ok {
-		funcs := tmp.([]func(i ...interface{}))
-		f = append(funcs, f...) //TODO 同步问题
+	if tmp, ok := l.Get(appId); ok {
+		ll := tmp.(*WsListener) //TODO 同步问题
+
+		if ll.funcs[event] == nil {
+			ll.funcs[event] = make([]func(params ...interface{}), 10)
+		} else {
+			ll.funcs[event] = append(ll.funcs[event], f)
+		}
+	} else {
+		listner := NewWsListener(WsListenersInst.context, appId)
+		ants.Submit(listner.run)
+		l.Set(appId, listner)
 	}
-	l.Set(appId, f)
 
 }

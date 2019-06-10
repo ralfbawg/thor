@@ -131,7 +131,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 	backMsg, err := json.Marshal(reqMsg)
 
 	if err == nil {
-		c.send <- backMsg
+		c.sendMsg(backMsg)
 	} else {
 		logging.Error("出错了")
 	}
@@ -139,6 +139,9 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 }
 func (c *TcpClient) close() {
 	c.conn.Close()
+}
+func (c *TcpClient) sendMsg(msg []byte) {
+	c.send <- msg
 }
 func (c *TcpClient) closeWs(uid string) {
 	TcpManagerInst.WsCloseHandler(c.appId, 0, uid)
