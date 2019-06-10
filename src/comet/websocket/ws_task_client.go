@@ -16,7 +16,8 @@ type WsTaskClient struct {
 	// Buffered channel of outbound messages.
 	send chan []byte
 
-	uid string
+	uid    string
+	inited bool //注册，初始化完成
 }
 
 const (
@@ -73,6 +74,9 @@ func (c *WsTaskClient) readGoroutine() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		if c.inited {
+
+		}
 		Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_READ, message)
 		logging.Debug("receive the websocket client(%s),ip(%s) message:%s ", c.uid, c.GetConn().RemoteAddr().String(), message)
 		//c.send <- []byte(helloMessage)

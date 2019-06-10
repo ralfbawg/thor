@@ -17,7 +17,6 @@ var (
 	tcpCPoolExtendFactor       = 0.8
 	tcpCPoolDefaultSize        = 10000
 	tcpCPool, _                = ants.NewPool(tcpCPoolDefaultSize)
-	funcs                      = make([]func(), 0)
 	newline                    = []byte{'\n'}
 	space                      = []byte{' '}
 	bindClients, unbindClients = util.NewConcMap(), util.NewConcMap()
@@ -36,7 +35,7 @@ var bytePool = &sync.Pool{
 }
 
 func (c *TcpClient) run() {
-	util.SubmitTaskAndResize(tcpCPool, tcpCPoolDefaultSize, tcpCPoolExtendFactor, append(funcs[:0], c.Write, c.Read))
+	util.SubmitTaskAndResize(tcpCPool, tcpCPoolDefaultSize, tcpCPoolExtendFactor, c.Write, c.Read)
 }
 
 func (c *TcpClient) Write() {
@@ -110,7 +109,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 				c.taskId = reqMsg.Header.TaskId
 				c.uid = reqMsg.Header.Uid
 				websocket.Wslisteners.Register(reqMsg.Header.AppId, func(a ...interface{}) {
-					
+
 				})
 				TcpManagerInst.bind <- c
 			}

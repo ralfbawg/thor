@@ -19,7 +19,6 @@ var (
 	wrPoolExtendFactor = 0.8
 	wrPoolDefaultSize  = 10000
 	wrPool, _          = ants.NewPool(wrPoolDefaultSize)
-	funcs              = make([]func(), 0)
 )
 
 type WsTask struct {
@@ -51,11 +50,11 @@ type Ws_context struct {
 }
 
 func (task *WsTask) AddClient(uid string, conn *ws.Conn) *WsTaskClient {
-	if task == nil {
-		logging.Info("task is empty")
-	}
-	if task.clients == nil {
-		logging.Info("task clients is empty")
+	if task == nil || task.clients == nil {
+		logging.Info(util.AOrB(func() bool {
+			return task == nil
+		}, "task is empty", "task clients is empty").(string))
+		return nil
 	}
 	if client, ok := task.clients.Get(uid); ok && client != nil { //TODO 如果存在，如何处理,暂时先断开，删除
 		task.unregister <- client.(*WsTaskClient)
@@ -72,7 +71,7 @@ func (task *WsTask) AddClient(uid string, conn *ws.Conn) *WsTaskClient {
 	}
 	client.task.register <- client
 
-	util.SubmitTaskAndResize(wrPool, wrPoolDefaultSize, wrPoolExtendFactor, append(funcs[:0], client.readGoroutine, client.writeGoroutine)) //fixme funcs有可能有同步问题
+	util.SubmitTaskAndResize(wrPool, wrPoolDefaultSize, wrPoolExtendFactor, client.readGoroutine, client.writeGoroutine) //fixme funcs有可能有同步问题
 	//client.Send([]byte(hiMesaage + "," + client.uid))                                                                                       //fixme 第一次连接发送，方便测试
 	client.Send([]byte(fmt.Sprintf(hiMesaageJson, client.uid)))
 	return client

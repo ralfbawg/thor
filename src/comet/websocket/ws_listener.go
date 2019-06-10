@@ -47,9 +47,10 @@ type WsEvent struct {
 	param []interface{}
 }
 
-func NewWsListener() *BaseWsListener {
-	return &BaseWsListener{
-		listeners: util.NewConcMap(),
+func NewWsListener(appId string) *WsListener {
+	return &WsListener{
+		appId:     appId,
+		eventChan: make(chan WsEvent),
 	}
 }
 func (l WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
@@ -69,10 +70,10 @@ func (l WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
 	}
 }
 func (l *WsListeners) Register(appId string, event int, f ...func(a ...interface{})) {
-	if tmp, ok := l.listeners.Get(appId + MAP_KEY_SEPARATOR + strconv.Itoa(event)); ok {
+	if tmp, ok := l.Get(appId + MAP_KEY_SEPARATOR + strconv.Itoa(event)); ok {
 		funcs := tmp.([]func(i ...interface{}))
-		f = append(funcs, f...) //FIXME 同步问题
+		f = append(funcs, f...) //TODO 同步问题
 	}
-	l.listeners.Set(appId, f)
+	l.Set(appId, f)
 
 }

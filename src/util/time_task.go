@@ -26,7 +26,7 @@ func TimeTask(t time.Duration, count int, f func(n int)) {
 		}
 	}()
 }
-func SubmitTaskAndResize(pool *ants.Pool, defaultSize int, factor float64, f []func()) {
+func SubmitTaskAndResize(pool *ants.Pool, defaultSize int, factor float64, f ...func()) {
 	if float64(pool.Running())/float64(defaultSize) > factor {
 		defaultSize *= 2
 		pool.Tune(defaultSize)
