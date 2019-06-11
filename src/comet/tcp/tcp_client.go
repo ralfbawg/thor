@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"comet/websocket"
 	"github.com/panjf2000/ants"
 	"util"
 	"bytes"
@@ -11,6 +10,7 @@ import (
 	"task"
 	"sync"
 	"time"
+	"comet/websocket"
 )
 
 var (
@@ -108,9 +108,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 				c.appId = reqMsg.Header.AppId
 				c.taskId = reqMsg.Header.TaskId
 				c.uid = reqMsg.Header.Uid
-				websocket.Wslisteners.Register(reqMsg.Header.AppId, func(a ...interface{}) {
-
-				})
+				websocket.WsListenersInst.Register(reqMsg.Header.AppId, test) //TODO 循环引用
 				TcpManagerInst.bind <- c
 			}
 		case TCP_MSG_TYPE_BROADCAST, TCP_MSG_TYPE_UNICAST:
@@ -145,4 +143,7 @@ func (c *TcpClient) sendMsg(msg []byte) {
 }
 func (c *TcpClient) closeWs(uid string) {
 	TcpManagerInst.WsCloseHandler(c.appId, 0, uid)
+}
+func test() {
+
 }

@@ -5,7 +5,7 @@ import (
 	"common/logging"
 	"time"
 	"github.com/gorilla/websocket"
-	"comet/tcp"
+	rpc "comet/service/rpc"
 )
 
 type WsApp struct {
@@ -61,7 +61,7 @@ func (app *WsApp) GetAppId() string {
 }
 
 func (app *WsApp) processMsg(taskId int, uid string, msg []byte) {
-	if err := tcp.SendMsg(app.appId, taskId, uid, msg); err != nil {
+	if err := rpc.RpcClient.SendMsg(app.appId, taskId, uid, msg); err != nil {
 		app.Tasks[taskId].GetClient(uid).Send([]byte(err.Error()))
 	}
 }

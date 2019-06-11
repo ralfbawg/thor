@@ -5,6 +5,7 @@ import (
 	"context"
 	"github.com/panjf2000/ants"
 	"util"
+	"sync"
 )
 
 const (
@@ -16,13 +17,14 @@ const (
 )
 
 var WsListenersInst = &WsListeners{
-	util.NewConcMap(),
-	context.Background(),
+	ConcMap: util.NewConcMap(),
+	context: context.Background(),
 }
 
 type WsListeners struct {
 	util.ConcMap
 	context context.Context
+	lock    sync.RWMutex
 }
 
 type WsListenerI interface {
@@ -81,13 +83,15 @@ func (l WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
 
 //注册监听事件
 func (l *WsListeners) Register(appId string, event int, f ...func(a ...interface{})) {
+	l.lock.RLock() //TODO 同步问题有没有更好的方法呢?
+	defer l.lock.RUnlock()
 	if tmp, ok := l.Get(appId); ok {
-		ll := tmp.(*WsListener) //TODO 同步问题
+		ll := tmp.(*WsListener)
 
 		if ll.funcs[event] == nil {
 			ll.funcs[event] = make([]func(params ...interface{}), 10)
 		} else {
-			ll.funcs[event] = append(ll.funcs[event], f)
+			ll.funcs[event] = append(ll.funcs[event], f...)
 		}
 	} else {
 		listner := NewWsListener(WsListenersInst.context, appId)

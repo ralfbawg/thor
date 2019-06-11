@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	appIdParam  = "appId"
-	taskIdParam = "taskId"
-	appKeyParam = "appKey"
-	uidParam    = "uid"
+	appIdParam     = "appId"
+	taskIdParam    = "taskId"
+	appKeyParam    = "appKey"
+	appSecretParam = "appSecret"
+	uidParam       = "uid"
 )
 
 /*

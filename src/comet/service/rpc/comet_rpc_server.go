@@ -8,10 +8,10 @@ type ServiceConfig struct {
 	desc   string
 }
 
-func Init() {
-	Register(&ServiceConfig{})
-	Service()
-}
+//func Init() {
+//	Register(&ServiceConfig{})
+//	Service()
+//}
 
 func Service() {
 

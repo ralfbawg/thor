@@ -1,116 +1,122 @@
 {
-	"comment": "",
-	"ignore": "test",
-	"package": [
-		{
-			"path": "appengine/cloudsql",
-			"revision": ""
-		},
-		{
-			"checksumSHA1": "8nCzR8tmJm3JHry2gc/KupDiHUM=",
-			"path": "github.com/StackExchange/wmi",
-			"revision": "e0a55b97c70558c92ce14085e41b35a894e93d3d",
-			"revisionTime": "2018-12-12T23:48:31Z"
-		},
-		{
-			"checksumSHA1": "tEQX6Pcp71YN2rON4Td7Xcc/Ds4=",
-			"path": "github.com/go-ole/go-ole",
-			"revision": "97b6244175ae18ea6eef668034fd6565847501c9",
-			"revisionTime": "2019-02-26T14:26:00Z"
-		},
-		{
-			"checksumSHA1": "8WEwmkTfx50YYgQZblE1fKHsgDI=",
-			"path": "github.com/go-ole/go-ole/oleutil",
-			"revision": "97b6244175ae18ea6eef668034fd6565847501c9",
-			"revisionTime": "2019-02-26T14:26:00Z"
-		},
-		{
-			"checksumSHA1": "D84lc0EqDR5n5gPJ3wn4FzmALyk=",
-			"path": "github.com/go-sql-driver/mysql",
-			"revision": "2c9d54fefcfb443251f5b92cd5106cf4dc07b880",
-			"revisionTime": "2019-03-08T05:26:31Z"
-		},
-		{
-			"checksumSHA1": "Fd3AdCTynYnzoXmBQYJ4p4VYcbE=",
-			"path": "github.com/go-xorm/builder",
-			"revision": "1d658d7596c25394aab557ef5b50ef35bf706384",
-			"revisionTime": "2019-01-24T07:59:16Z"
-		},
-		{
-			"checksumSHA1": "purSaleTGYnxpOjDD06465Q8ids=",
-			"path": "github.com/go-xorm/core",
-			"revision": "ccc80c1adf1f6172bbc548877f50a1163041a40a",
-			"revisionTime": "2019-01-24T07:01:53Z"
-		},
-		{
-			"checksumSHA1": "eXeLMsOeYtBpY09qjImLYIMtnqg=",
-			"path": "github.com/go-xorm/xorm",
-			"revision": "1c2d47e0da970d1b3214cd57e6ab9e9b81556ab2",
-			"revisionTime": "2019-03-13T11:02:41Z"
-		},
-		{
-			"checksumSHA1": "c//wUUHFTjUFshMO7TKJKD+1W+g=",
-			"path": "github.com/gorilla/websocket",
-			"revision": "7c8e298727d149d7c329b4dec7e94e1932ac5c11",
-			"revisionTime": "2018-12-18T07:24:45Z"
-		},
-		{
-			"checksumSHA1": "ZSOYAmjVqU70aK1ZETn+0iWf/xo=",
-			"path": "github.com/jteeuwen/go-bindata",
-			"revision": "6025e8de665b31fa74ab1a66f2cddd8c0abf887e",
-			"revisionTime": "2018-03-05T03:04:58Z"
-		},
-		{
-			"checksumSHA1": "t3qqlgMecxGy1yXXvTdRicJCgN4=",
-			"path": "github.com/panjf2000/ants",
-			"revision": "4ae3fb8dc413492862469027bb58cb45b77338f1",
-			"revisionTime": "2019-02-22T16:46:49Z"
-		},
-		{
-			"checksumSHA1": "Bw1pWmtM5lWxNXd+QVPXCrEMJtk=",
-			"path": "github.com/shirou/gopsutil/cpu",
-			"revision": "2cbc9195c892b304060269ef280375236d2fcac9",
-			"revisionTime": "2019-03-23T13:16:28Z"
-		},
-		{
-			"checksumSHA1": "flViJJmmjNm67YnCpYn0kVcsqD4=",
-			"path": "github.com/shirou/gopsutil/internal/common",
-			"revision": "2cbc9195c892b304060269ef280375236d2fcac9",
-			"revisionTime": "2019-03-23T13:16:28Z"
-		},
-		{
-			"checksumSHA1": "pz1mlyv8A+oIzufn9f+j2OiBOkQ=",
-			"path": "github.com/smallnest/rpcx",
-			"revision": "8e06f5c7a98c13022f4df3cd4e9dfcb9bb120643",
-			"revisionTime": "2019-04-27T05:27:56Z"
-		},
-		{
-			"path": "go-sql-driver/mysql",
-			"revision": ""
-		},
-		{
-			"checksumSHA1": "tVYxUJ9V+T+4HcmGA3zTDX9KetU=",
-			"path": "golang.org/x/sys/unix",
-			"revision": "97732733099d6a942a73b889770774366de963ed",
-			"revisionTime": "2019-04-05T06:12:26Z"
-		},
-		{
-			"checksumSHA1": "Z1ah28tIwIE0g6ybwhg3pyXHlvU=",
-			"path": "golang.org/x/sys/windows",
-			"revision": "97732733099d6a942a73b889770774366de963ed",
-			"revisionTime": "2019-04-05T06:12:26Z"
-		},
-		{
-			"checksumSHA1": "W/pYxFe8/FHT10/wulwesJsOoUw=",
-			"path": "google.golang.org/appengine/cloudsql",
-			"revision": "54a98f90d1c46b7731eb8fb305d2a321c30ef610",
-			"revisionTime": "2019-02-15T20:43:44Z"
-		},
-		{
-			"checksumSHA1": "oNqPrS2edE8peI3ah2INe379k8E=",
-			"path": "gopkg.in/yaml.v2",
-			"revision": "51d6538a90f86fe93ac480b35f37b2be17fef232",
-			"revisionTime": "2018-11-15T11:05:04Z"
-		}
-	]
+  "comment": "",
+  "ignore": "test",
+  "package": [
+    {
+      "path": "appengine/cloudsql",
+      "revision": ""
+    },
+    {
+      "checksumSHA1": "8nCzR8tmJm3JHry2gc/KupDiHUM=",
+      "path": "github.com/StackExchange/wmi",
+      "revision": "e0a55b97c70558c92ce14085e41b35a894e93d3d",
+      "revisionTime": "2018-12-12T23:48:31Z"
+    },
+    {
+      "checksumSHA1": "tEQX6Pcp71YN2rON4Td7Xcc/Ds4=",
+      "path": "github.com/go-ole/go-ole",
+      "revision": "97b6244175ae18ea6eef668034fd6565847501c9",
+      "revisionTime": "2019-02-26T14:26:00Z"
+    },
+    {
+      "checksumSHA1": "8WEwmkTfx50YYgQZblE1fKHsgDI=",
+      "path": "github.com/go-ole/go-ole/oleutil",
+      "revision": "97b6244175ae18ea6eef668034fd6565847501c9",
+      "revisionTime": "2019-02-26T14:26:00Z"
+    },
+    {
+      "checksumSHA1": "D84lc0EqDR5n5gPJ3wn4FzmALyk=",
+      "path": "github.com/go-sql-driver/mysql",
+      "revision": "2c9d54fefcfb443251f5b92cd5106cf4dc07b880",
+      "revisionTime": "2019-03-08T05:26:31Z"
+    },
+    {
+      "checksumSHA1": "Fd3AdCTynYnzoXmBQYJ4p4VYcbE=",
+      "path": "github.com/go-xorm/builder",
+      "revision": "1d658d7596c25394aab557ef5b50ef35bf706384",
+      "revisionTime": "2019-01-24T07:59:16Z"
+    },
+    {
+      "checksumSHA1": "purSaleTGYnxpOjDD06465Q8ids=",
+      "path": "github.com/go-xorm/core",
+      "revision": "ccc80c1adf1f6172bbc548877f50a1163041a40a",
+      "revisionTime": "2019-01-24T07:01:53Z"
+    },
+    {
+      "checksumSHA1": "eXeLMsOeYtBpY09qjImLYIMtnqg=",
+      "path": "github.com/go-xorm/xorm",
+      "revision": "1c2d47e0da970d1b3214cd57e6ab9e9b81556ab2",
+      "revisionTime": "2019-03-13T11:02:41Z"
+    },
+    {
+      "checksumSHA1": "a4sZsmWUpkeJmCp8DmWYqgUyMKc=",
+      "path": "github.com/golang/lint",
+      "revision": "959b441ac422379a43da2230f62be024250818b0",
+      "revisionTime": "2019-04-09T20:23:51Z"
+    },
+    {
+      "checksumSHA1": "c//wUUHFTjUFshMO7TKJKD+1W+g=",
+      "path": "github.com/gorilla/websocket",
+      "revision": "7c8e298727d149d7c329b4dec7e94e1932ac5c11",
+      "revisionTime": "2018-12-18T07:24:45Z"
+    },
+    {
+      "checksumSHA1": "ZSOYAmjVqU70aK1ZETn+0iWf/xo=",
+      "path": "github.com/jteeuwen/go-bindata",
+      "revision": "6025e8de665b31fa74ab1a66f2cddd8c0abf887e",
+      "revisionTime": "2018-03-05T03:04:58Z"
+    },
+    {
+      "checksumSHA1": "t3qqlgMecxGy1yXXvTdRicJCgN4=",
+      "path": "github.com/panjf2000/ants",
+      "revision": "4ae3fb8dc413492862469027bb58cb45b77338f1",
+      "revisionTime": "2019-02-22T16:46:49Z"
+    },
+    {
+      "checksumSHA1": "Bw1pWmtM5lWxNXd+QVPXCrEMJtk=",
+      "path": "github.com/shirou/gopsutil/cpu",
+      "revision": "2cbc9195c892b304060269ef280375236d2fcac9",
+      "revisionTime": "2019-03-23T13:16:28Z"
+    },
+    {
+      "checksumSHA1": "flViJJmmjNm67YnCpYn0kVcsqD4=",
+      "path": "github.com/shirou/gopsutil/internal/common",
+      "revision": "2cbc9195c892b304060269ef280375236d2fcac9",
+      "revisionTime": "2019-03-23T13:16:28Z"
+    },
+    {
+      "checksumSHA1": "pz1mlyv8A+oIzufn9f+j2OiBOkQ=",
+      "path": "github.com/smallnest/rpcx",
+      "revision": "8e06f5c7a98c13022f4df3cd4e9dfcb9bb120643",
+      "revisionTime": "2019-04-27T05:27:56Z"
+    },
+    {
+      "path": "go-sql-driver/mysql",
+      "revision": ""
+    },
+    {
+      "checksumSHA1": "tVYxUJ9V+T+4HcmGA3zTDX9KetU=",
+      "path": "golang.org/x/sys/unix",
+      "revision": "97732733099d6a942a73b889770774366de963ed",
+      "revisionTime": "2019-04-05T06:12:26Z"
+    },
+    {
+      "checksumSHA1": "Z1ah28tIwIE0g6ybwhg3pyXHlvU=",
+      "path": "golang.org/x/sys/windows",
+      "revision": "97732733099d6a942a73b889770774366de963ed",
+      "revisionTime": "2019-04-05T06:12:26Z"
+    },
+    {
+      "checksumSHA1": "W/pYxFe8/FHT10/wulwesJsOoUw=",
+      "path": "google.golang.org/appengine/cloudsql",
+      "revision": "54a98f90d1c46b7731eb8fb305d2a321c30ef610",
+      "revisionTime": "2019-02-15T20:43:44Z"
+    },
+    {
+      "checksumSHA1": "oNqPrS2edE8peI3ah2INe379k8E=",
+      "path": "gopkg.in/yaml.v2",
+      "revision": "51d6538a90f86fe93ac480b35f37b2be17fef232",
+      "revisionTime": "2018-11-15T11:05:04Z"
+    }
+  ]
 }

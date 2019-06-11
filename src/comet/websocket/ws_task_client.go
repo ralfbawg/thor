@@ -44,15 +44,15 @@ var (
 )
 
 func (c *WsTaskClient) Close() {
-	Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_CLOSE)
+	WsListenersInst.TriggerEvent(c.task.app.appId, WS_EVENT_CLOSE)
 	logging.Debug("close client uid(%s) by hand", c.uid)
 	c.task.unregister <- c
 	c.conn.Close()
 }
 func (c *WsTaskClient) readGoroutine() {
-	Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_CONNECTED)
+	WsListenersInst.TriggerEvent(c.task.app.appId, WS_EVENT_CONNECTED)
 	defer func() {
-		Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_CLOSE)
+		WsListenersInst.TriggerEvent(c.task.app.appId, WS_EVENT_CLOSE)
 		logging.Debug("client uid(%s) closing", c.uid)
 		c.task.unregister <- c
 		c.conn.Close()
@@ -77,7 +77,7 @@ func (c *WsTaskClient) readGoroutine() {
 		if c.inited {
 
 		}
-		Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_READ, message)
+		WsListenersInst.TriggerEvent(c.task.app.appId, WS_EVENT_READ, message)
 		logging.Debug("receive the websocket client(%s),ip(%s) message:%s ", c.uid, c.GetConn().RemoteAddr().String(), message)
 		//c.send <- []byte(helloMessage)
 		c.task.app.processMsg(0, c.uid, message)
@@ -107,7 +107,7 @@ func (c *WsTaskClient) writeGoroutine() {
 				return
 			}
 			w.Write(message)
-			Wslisteners.TriggerEvent(c.task.app.appId, WS_EVENT_WRITE, message)
+			WsListenersInst.TriggerEvent(c.task.app.appId, WS_EVENT_WRITE, message)
 			// Add queued chat messages to the current websocket message.
 			//n := len(c.send)
 			//for i := 0; i < n; i++ {

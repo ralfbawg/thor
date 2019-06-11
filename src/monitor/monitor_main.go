@@ -1,7 +1,6 @@
 package monitor
 
 import (
-	"common"
 	"common/logging"
 	"runtime"
 	"runtime/debug"
@@ -18,13 +17,9 @@ const (
 )
 
 type monitorMain struct {
-	common.InitI
 }
 
 func (m *monitorMain) init() {
-	initMemMonitor()
-}
-func MonitorInit() {
 	initMemMonitor()
 }
 
