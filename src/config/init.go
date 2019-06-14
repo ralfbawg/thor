@@ -2,7 +2,6 @@ package config
 
 import (
 	"common/logging"
-	"monitor"
 	"comet/websocket"
 )
 
@@ -12,7 +11,7 @@ func InitMain() {
 	} else {
 		logging.Debug("db hots:%s", c.Db.Host)
 		//db.InitDb(c.Db.Host, c.Db.Port, c.Db.DbName, c.Db.Username, c.Db.Password, c.Db.DbType)
-		monitor.MonitorInit()
+		//monitor.MonitorInit()
 		websocket.WsManagerInit()
 	}
 

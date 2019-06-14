@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	MAP_KEY_SEPARATOR  = "#"
 	WS_EVENT_CONNECTED = iota
 	WS_EVENT_READ
 	WS_EVENT_WRITE
 	WS_EVENT_CLOSE
+	MAP_KEY_SEPARATOR  = "#"
 )
 
 var WsListenersInst = &WsListeners{
@@ -41,19 +41,22 @@ type WsListener struct {
 }
 
 func (l *WsListener) run() {
-	select {
-	case event := <-l.eventChan:
-		registerFuncs := l.funcs[event.event]
-		for _, eventFunc := range registerFuncs {
-			ants.Submit(func() {
-				eventFunc(event.param)
-			})
+	for {
+		select {
+		case event := <-l.eventChan:
+			registerFuncs := l.funcs[event.event]
+			for _, eventFunc := range registerFuncs {
+				ants.Submit(func() {
+					eventFunc(event.event, event.param)
+				})
+			}
+		case <-l.c.Done():
+			logging.Debug("WsListener parent context done,i should exit")
+			close(l.eventChan) //不再接收事件
+			return
 		}
-	case <-l.c.Done():
-		logging.Debug("WsListener parent context done,i should exit")
-		close(l.eventChan) //不再接收事件
-		return
 	}
+
 }
 
 type WsEvent struct {
@@ -65,16 +68,16 @@ func NewWsListener(c context.Context, appId string) *WsListener {
 	context, _ := context.WithCancel(c)
 	return &WsListener{
 		appId:     appId,
-		eventChan: make(chan *WsEvent),
+		eventChan: make(chan *WsEvent, 10),
 		c:         context,
 		funcs: make([][]func(params ...interface{}), 10),
 	}
 }
-func (l WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
-	var listner *WsListener
+func (l *WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
+	var listener *WsListener
 	if tmp, ok := l.Get(appId); ok {
-		listner = tmp.(*WsListener)
-		listner.eventChan <- &WsEvent{event: event, param: ext,}
+		listener = tmp.(*WsListener)
+		listener.eventChan <- &WsEvent{event: event, param: ext,}
 	} else {
 		logging.Debug("appId %s is not exist", appId)
 	}
@@ -82,21 +85,25 @@ func (l WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
 }
 
 //注册监听事件
-func (l *WsListeners) Register(appId string, event int, f ...func(a ...interface{})) {
+func (l *WsListeners) Register(appId string, f func(a ...interface{}), events ...int) {
 	l.lock.RLock() //TODO 同步问题有没有更好的方法呢?
 	defer l.lock.RUnlock()
+	var listener *WsListener
 	if tmp, ok := l.Get(appId); ok {
-		ll := tmp.(*WsListener)
+		listener = tmp.(*WsListener)
 
-		if ll.funcs[event] == nil {
-			ll.funcs[event] = make([]func(params ...interface{}), 10)
-		} else {
-			ll.funcs[event] = append(ll.funcs[event], f...)
-		}
 	} else {
-		listner := NewWsListener(WsListenersInst.context, appId)
-		ants.Submit(listner.run)
-		l.Set(appId, listner)
+		listener = NewWsListener(WsListenersInst.context, appId)
+		ants.Submit(listener.run)
 	}
-
+	for _, event := range events {
+		if listener.funcs[event] == nil {
+			listener.funcs[event] = []func(params ...interface{}){
+				f,
+			}
+		} else {
+			listener.funcs[event] = append(listener.funcs[event], f)
+		}
+	}
+	l.Set(appId, listener)
 }

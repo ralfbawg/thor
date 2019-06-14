@@ -5,10 +5,11 @@ import (
 )
 
 type TcpManager struct {
-	bind           chan *TcpClient
-	unbind         chan *TcpClient
-	WsBroadcast    func(string, int, string, []byte)
-	WsCloseHandler func(string, int, string)
+	bind               chan *TcpClient
+	unbind             chan *TcpClient
+	WsBroadcast        func(string, int, string, []byte)
+	WsCloseHandler     func(string, int, string)
+	WsListenerRegister func(string, func(...interface{}), ...int)
 }
 
 var TcpManagerInst = TcpManagerInit()
@@ -29,7 +30,9 @@ func (tcpManger *TcpManager) SetBroadcast(f func(string, int, string, []byte)) {
 func (tcpManger *TcpManager) SetCloseWsHandler(f func(string, int, string)) {
 	tcpManger.WsCloseHandler = f
 }
-
+func (tcpManger *TcpManager) SetWsListenerRegister(f func(string, func(...interface{}), ...int)) {
+	tcpManger.WsListenerRegister = f
+}
 func (tcpManger *TcpManager) Run() {
 	for {
 		select {

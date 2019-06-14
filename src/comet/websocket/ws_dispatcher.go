@@ -84,6 +84,7 @@ func WsManagerInit() {
 	}
 	tcp.TcpManagerInst.SetBroadcast(WsBroadcast)
 	tcp.TcpManagerInst.SetCloseWsHandler(CloseClient)
+	tcp.TcpManagerInst.SetWsListenerRegister(WsListenersInst.Register)
 	ants.Submit(func() {
 		for {
 			select {

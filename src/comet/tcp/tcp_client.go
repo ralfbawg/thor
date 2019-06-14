@@ -10,7 +10,13 @@ import (
 	"task"
 	"sync"
 	"time"
-	"comet/websocket"
+)
+
+const (
+	WS_EVENT_CONNECTED = iota
+	WS_EVENT_READ
+	WS_EVENT_WRITE
+	WS_EVENT_CLOSE
 )
 
 var (
@@ -108,7 +114,19 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 				c.appId = reqMsg.Header.AppId
 				c.taskId = reqMsg.Header.TaskId
 				c.uid = reqMsg.Header.Uid
-				websocket.WsListenersInst.Register(reqMsg.Header.AppId, test) //TODO 循环引用
+				TcpManagerInst.WsListenerRegister(reqMsg.Header.AppId, func(i ...interface{}) {
+					//fmt.Printf("good event %s", i)
+					//logging.Debug("i am trigger event")
+					tcpMsg := &TcpMsg{}
+					tcpMsg.Header.AppId = c.appId
+					tcpMsg.Header.TaskId = c.taskId
+					tcpMsg.Header.Uid = c.uid
+					tcpMsg.Header.MsgType = 200
+					tcpMsg.Body = make(map[string]interface{}, 1)
+					tcpMsg.Body["event"] = i[0]
+					msg, _ := json.Marshal(tcpMsg)
+					c.sendMsg(msg)
+				}, WS_EVENT_CONNECTED, WS_EVENT_READ, WS_EVENT_WRITE, WS_EVENT_CLOSE)
 				TcpManagerInst.bind <- c
 			}
 		case TCP_MSG_TYPE_BROADCAST, TCP_MSG_TYPE_UNICAST:
