@@ -114,19 +114,20 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 				c.appId = reqMsg.Header.AppId
 				c.taskId = reqMsg.Header.TaskId
 				c.uid = reqMsg.Header.Uid
-				TcpManagerInst.WsListenerRegister(reqMsg.Header.AppId, func(i ...interface{}) {
+				TcpManagerInst.WsListenerRegister(reqMsg.Header.AppId, c.ip, func(i ...interface{}) {
 					//fmt.Printf("good event %s", i)
 					//logging.Debug("i am trigger event")
 					tcpMsg := &TcpMsg{}
 					tcpMsg.Header.AppId = c.appId
 					tcpMsg.Header.TaskId = c.taskId
-					tcpMsg.Header.Uid = c.uid
+					tcpMsg.Header.Uid = i[1].(string)
 					tcpMsg.Header.MsgType = 200
 					tcpMsg.Body = make(map[string]interface{}, 1)
 					tcpMsg.Body["event"] = i[0]
 					msg, _ := json.Marshal(tcpMsg)
 					c.sendMsg(msg)
-				}, WS_EVENT_CONNECTED, WS_EVENT_READ, WS_EVENT_WRITE, WS_EVENT_CLOSE)
+					//}, WS_EVENT_CONNECTED, WS_EVENT_READ, WS_EVENT_WRITE, WS_EVENT_CLOSE)
+				}, WS_EVENT_CONNECTED, WS_EVENT_CLOSE)
 				TcpManagerInst.bind <- c
 			}
 		case TCP_MSG_TYPE_BROADCAST, TCP_MSG_TYPE_UNICAST:
@@ -154,6 +155,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 	return backMsg, err
 }
 func (c *TcpClient) close() {
+	TcpManagerInst.WsListenerUnregister(c.appId, c.ip)
 	c.conn.Close()
 }
 func (c *TcpClient) sendMsg(msg []byte) {

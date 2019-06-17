@@ -5,11 +5,12 @@ import (
 )
 
 type TcpManager struct {
-	bind               chan *TcpClient
-	unbind             chan *TcpClient
-	WsBroadcast        func(string, int, string, []byte)
-	WsCloseHandler     func(string, int, string)
-	WsListenerRegister func(string, func(...interface{}), ...int)
+	bind                 chan *TcpClient
+	unbind               chan *TcpClient
+	WsBroadcast          func(string, int, string, []byte)
+	WsCloseHandler       func(string, int, string)
+	WsListenerRegister   func(string, string, func(...interface{}), ...int)
+	WsListenerUnregister func(string, string)
 }
 
 var TcpManagerInst = TcpManagerInit()
@@ -24,23 +25,29 @@ func TcpManagerInit() *TcpManager {
 	return m
 }
 
-func (tcpManger *TcpManager) SetBroadcast(f func(string, int, string, []byte)) {
-	tcpManger.WsBroadcast = f
+func (tcpManager *TcpManager) SetBroadcast(f func(string, int, string, []byte)) {
+	tcpManager.WsBroadcast = f
 }
-func (tcpManger *TcpManager) SetCloseWsHandler(f func(string, int, string)) {
-	tcpManger.WsCloseHandler = f
+func (tcpManager *TcpManager) SetCloseWsHandler(f func(string, int, string)) {
+	tcpManager.WsCloseHandler = f
 }
-func (tcpManger *TcpManager) SetWsListenerRegister(f func(string, func(...interface{}), ...int)) {
-	tcpManger.WsListenerRegister = f
+func (tcpManager *TcpManager) SetWsListenerRegister(f func(string, string, func(...interface{}), ...int)) {
+	tcpManager.WsListenerRegister = f
 }
-func (tcpManger *TcpManager) Run() {
+func (tcpManager *TcpManager) Run() {
 	for {
 		select {
-		case tcpClient := <-tcpManger.bind:
+		case tcpClient := <-tcpManager.bind:
 			bindClients.Set(tcpClient.appId, tcpClient)
 			unbindClients.Remove(tcpClient.appId)
-		case tcpClient := <-tcpManger.unbind:
+		case tcpClient := <-tcpManager.unbind:
 			unbindClients.Set(tcpClient.appId, tcpClient)
 		}
 	}
+}
+func (tcpManager *TcpManager) SetWsMethod(WsBroadcast func(appId string, taskId int, uid string, msg []byte), CloseClient func(appId string, taskId int, uid string), Register func(appId string, ip string, f func(a ...interface{}), events ...int), Unregister func(appId string, ip string)) {
+	tcpManager.WsBroadcast = WsBroadcast
+	tcpManager.WsCloseHandler = CloseClient
+	tcpManager.WsListenerRegister = Register
+	tcpManager.WsListenerUnregister = Unregister
 }

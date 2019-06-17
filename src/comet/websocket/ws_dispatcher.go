@@ -82,9 +82,10 @@ func WsManagerInit() {
 		register:       make(chan *WsApp, 1000),
 		CCountC:        make(chan int64, 100),
 	}
-	tcp.TcpManagerInst.SetBroadcast(WsBroadcast)
-	tcp.TcpManagerInst.SetCloseWsHandler(CloseClient)
-	tcp.TcpManagerInst.SetWsListenerRegister(WsListenersInst.Register)
+	tcp.TcpManagerInst.SetWsMethod(WsBroadcast, CloseClient, WsListenersInst.Register, WsListenersInst.Unregister)
+	//tcp.TcpManagerInst.SetBroadcast(WsBroadcast)
+	//tcp.TcpManagerInst.SetCloseWsHandler(CloseClient)
+	//tcp.TcpManagerInst.SetWsListenerRegister(WsListenersInst.Register)
 	ants.Submit(func() {
 		for {
 			select {

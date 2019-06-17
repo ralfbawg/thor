@@ -18,12 +18,12 @@ const (
 
 var WsListenersInst = &WsListeners{
 	ConcMap: util.NewConcMap(),
-	context: context.Background(),
+	Context: context.Background(),
 }
 
 type WsListeners struct {
 	util.ConcMap
-	context context.Context
+	Context context.Context
 	lock    sync.RWMutex
 }
 
@@ -35,20 +35,23 @@ type WsListenerI interface {
 type WsListener struct {
 	WsListenerI
 	appId string
-	funcs [][]func(i ...interface{})
-	eventChan chan *WsEvent
-	c         context.Context
+	//eventFunctions [][]func(i ...interface{})
+	eventFunctions util.ConcMap
+	eventChan      chan *WsEvent
+	c              context.Context
 }
 
 func (l *WsListener) run() {
 	for {
 		select {
 		case event := <-l.eventChan:
-			registerFuncs := l.funcs[event.event]
-			for _, eventFunc := range registerFuncs {
-				ants.Submit(func() {
-					eventFunc(event.event, event.param)
-				})
+			for tup := range l.eventFunctions.IterBuffered() {
+				registerFuncs := tup.Val.([][]func(i ...interface{}))[event.event]
+				for _, eventFunc := range registerFuncs {
+					ants.Submit(func() {
+						eventFunc(event.event, event.uid, event.param)
+					})
+				}
 			}
 		case <-l.c.Done():
 			logging.Debug("WsListener parent context done,i should exit")
@@ -61,23 +64,24 @@ func (l *WsListener) run() {
 
 type WsEvent struct {
 	event int
+	uid   string
 	param []interface{}
 }
 
 func NewWsListener(c context.Context, appId string) *WsListener {
 	context, _ := context.WithCancel(c)
 	return &WsListener{
-		appId:     appId,
-		eventChan: make(chan *WsEvent, 10),
-		c:         context,
-		funcs: make([][]func(params ...interface{}), 10),
+		appId:          appId,
+		eventChan:      make(chan *WsEvent, 10),
+		c:              context,
+		eventFunctions: util.NewConcMap(),
 	}
 }
-func (l *WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) {
-	var listener *WsListener
+func (l *WsListeners) TriggerEvent(appId string, uid string, event int, ext ...interface{}) {
 	if tmp, ok := l.Get(appId); ok {
-		listener = tmp.(*WsListener)
-		listener.eventChan <- &WsEvent{event: event, param: ext,}
+		event := &WsEvent{event: event, uid: uid, param: ext,}
+		listener := tmp.(*WsListener)
+		listener.eventChan <- event
 	} else {
 		logging.Debug("appId %s is not exist", appId)
 	}
@@ -85,25 +89,41 @@ func (l *WsListeners) TriggerEvent(appId string, event int, ext ...interface{}) 
 }
 
 //注册监听事件
-func (l *WsListeners) Register(appId string, f func(a ...interface{}), events ...int) {
+func (l *WsListeners) Register(appId string, ip string, f func(a ...interface{}), events ...int) {
 	l.lock.RLock() //TODO 同步问题有没有更好的方法呢?
 	defer l.lock.RUnlock()
 	var listener *WsListener
+	var c [][]func(i ...interface{})
 	if tmp, ok := l.Get(appId); ok {
 		listener = tmp.(*WsListener)
-
 	} else {
-		listener = NewWsListener(WsListenersInst.context, appId)
+		listener = NewWsListener(WsListenersInst.Context, appId)
 		ants.Submit(listener.run)
 	}
+	if a, b := listener.eventFunctions.Get(ip); b {
+		c = a.([][]func(i ...interface{}))
+	} else {
+		c = make([][]func(i ...interface{}), 10)
+	}
 	for _, event := range events {
-		if listener.funcs[event] == nil {
-			listener.funcs[event] = []func(params ...interface{}){
+		if c[event] == nil {
+			c[event] = []func(param ...interface{}){
 				f,
 			}
 		} else {
-			listener.funcs[event] = append(listener.funcs[event], f)
+			c[event] = append(c[event], f)
 		}
 	}
 	l.Set(appId, listener)
+}
+
+//注册监听事件
+func (l *WsListeners) Unregister(appId string, ip string) {
+	if a, ok := l.Get(appId); ok {
+		if b, okB := a.(util.ConcMap).Get(ip); okB {
+			close(b.(*WsListener).eventChan)
+		}
+		a.(util.ConcMap).Remove(ip)
+	}
+
 }
