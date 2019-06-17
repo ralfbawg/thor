@@ -93,7 +93,7 @@ func (l *WsListeners) Register(appId string, ip string, f func(a ...interface{})
 	l.lock.RLock() //TODO 同步问题有没有更好的方法呢?
 	defer l.lock.RUnlock()
 	var listener *WsListener
-	var c [][]func(i ...interface{})
+	var c []func(i ...interface{})
 	if tmp, ok := l.Get(appId); ok {
 		listener = tmp.(*WsListener)
 	} else {
@@ -101,18 +101,12 @@ func (l *WsListeners) Register(appId string, ip string, f func(a ...interface{})
 		ants.Submit(listener.run)
 	}
 	if a, b := listener.eventFunctions.Get(ip); b {
-		c = a.([][]func(i ...interface{}))
+		c = a.([]func(i ...interface{}))
 	} else {
-		c = make([][]func(i ...interface{}), 10)
+		c = make([]func(i ...interface{}), 10)
 	}
 	for _, event := range events {
-		if c[event] == nil {
-			c[event] = []func(param ...interface{}){
-				f,
-			}
-		} else {
-			c[event] = append(c[event], f)
-		}
+		c[event] = f
 	}
 	l.Set(appId, listener)
 }
