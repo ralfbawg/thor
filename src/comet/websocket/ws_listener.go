@@ -96,8 +96,9 @@ func (l *WsListeners) Register(appId string, ip string, f func(a ...interface{})
 	defer l.lock.RUnlock()
 	var listener *WsListener
 	var c []func(i ...interface{})
-	if tmp, ok := l.Get(appId); ok {
-		listener = tmp.(*WsListener)
+	if _, ok := l.Get(appId); ok {
+		return //TODO 如果存在则返回
+		//listener = tmp.(*WsListener)
 	} else {
 		listener = NewWsListener(WsListenersInst.Context, appId)
 		ants.Submit(listener.run)
