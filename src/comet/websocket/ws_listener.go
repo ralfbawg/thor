@@ -46,10 +46,12 @@ func (l *WsListener) run() {
 		select {
 		case event := <-l.eventChan:
 			for tup := range l.eventFunctions.IterBuffered() {
-				registerFuncs := tup.Val.([][]func(i ...interface{}))[event.event]
-				for _, eventFunc := range registerFuncs {
+				ip := tup.Key
+				registerFuncs := tup.Val.([]func(i ...interface{}))
+				if registerFuncs[event.event] != nil {
 					ants.Submit(func() {
-						eventFunc(event.event, event.uid, event.param)
+						logging.Debug("trigger ws event event %d to tcp (%s)", event.event, ip)
+						registerFuncs[event.event](event.event, event.uid, event.param)
 					})
 				}
 			}
@@ -100,24 +102,23 @@ func (l *WsListeners) Register(appId string, ip string, f func(a ...interface{})
 		listener = NewWsListener(WsListenersInst.Context, appId)
 		ants.Submit(listener.run)
 	}
-	if a, b := listener.eventFunctions.Get(ip); b {
-		c = a.([]func(i ...interface{}))
+	if _, b := listener.eventFunctions.Get(ip); b {
+		logging.Debug("tcp id(%s) has registered ws events already", ip)
+		return
 	} else {
 		c = make([]func(i ...interface{}), 10)
 	}
 	for _, event := range events {
 		c[event] = f
 	}
+	listener.eventFunctions.Set(ip, c)
 	l.Set(appId, listener)
 }
 
 //注册监听事件
 func (l *WsListeners) Unregister(appId string, ip string) {
 	if a, ok := l.Get(appId); ok {
-		if b, okB := a.(util.ConcMap).Get(ip); okB {
-			close(b.(*WsListener).eventChan)
-		}
-		a.(util.ConcMap).Remove(ip)
+		a.(*WsListener).eventFunctions.Remove(ip)
 	}
 
 }
