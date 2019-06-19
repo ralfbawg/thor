@@ -2,14 +2,21 @@ package tcp
 
 import (
 	"github.com/panjf2000/ants"
+	"util"
+	"math/rand"
+	"time"
 )
 
 type TcpManager struct {
-	bind                 chan *TcpClient
-	unbind               chan *TcpClient
-	WsBroadcast          func(string, int, string, []byte)
-	WsCloseHandler       func(string, int, string)
-	WsListenerRegister   func(string, string, func(...interface{}), ...int)
+	bind           chan *TcpClient
+	unbind         chan *TcpClient
+	close          chan *TcpClient
+	bindClients    util.ConcMap
+	unbindClients  util.ConcMap
+	WsBroadcast    func(string, int, string, []byte)
+	WsCloseHandler func(string, int, string)
+	WsListenerRegister func(string, string, func(...interface {
+	}), ...int)
 	WsListenerUnregister func(string, string)
 }
 
@@ -18,11 +25,28 @@ var TcpManagerInst = TcpManagerInit()
 
 func TcpManagerInit() *TcpManager {
 	m := &TcpManager{
-		bind:   make(chan *TcpClient, 10),
-		unbind: make(chan *TcpClient, 10),
+		bind:          make(chan *TcpClient, 10),
+		unbind:        make(chan *TcpClient, 10),
+		bindClients:   util.NewConcMap(),
+		unbindClients: util.NewConcMap(),
 	}
 	ants.Submit(m.Run)
 	return m
+}
+func (tcpManager *TcpManager) GetTcpClient(appId string) (*TcpClient, bool) {
+	if tmp, ok := tcpManager.bindClients.Get(appId); ok {
+		tmpKeys := tmp.(util.ConcMap).Keys()
+		rand.Seed(time.Now().Unix())
+		a, okB := tmp.(util.ConcMap).Get(tmpKeys[rand.Intn(len(tmpKeys)-1)]);
+		if okB {
+			return a.(*TcpClient), true
+		} else {
+			return nil, false
+		}
+
+	} else {
+		return nil, false
+	}
 }
 
 func (tcpManager *TcpManager) SetBroadcast(f func(string, int, string, []byte)) {
@@ -38,10 +62,21 @@ func (tcpManager *TcpManager) Run() {
 	for {
 		select {
 		case tcpClient := <-tcpManager.bind:
-			bindClients.Set(tcpClient.appId, tcpClient)
-			unbindClients.Remove(tcpClient.appId)
+			var tmpM util.ConcMap
+			if a, ok := tcpManager.bindClients.Get(tcpClient.appId); ok {
+				tmpM = a.(util.ConcMap)
+			} else {
+				tmpM = util.NewConcMap()
+			}
+			tmpM.Set(tcpClient.ip, tcpClient)
+			tcpManager.bindClients.Set(tcpClient.appId, tmpM)
 		case tcpClient := <-tcpManager.unbind:
-			unbindClients.Set(tcpClient.appId, tcpClient)
+			tcpManager.unbindClients.Set(tcpClient.ip, tcpClient)
+		case tcpClient := <-tcpManager.close:
+			tcpManager.unbindClients.Remove(tcpClient.ip)
+			if a, ok := tcpManager.bindClients.Get(tcpClient.appId); ok {
+				a.(util.ConcMap).Remove(tcpClient.ip)
+			}
 		}
 	}
 }

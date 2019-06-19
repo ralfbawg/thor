@@ -8,6 +8,7 @@ import (
 	"context"
 	"bytes"
 	"errors"
+	"util"
 )
 
 const (
@@ -33,7 +34,7 @@ func UnmarshalMsg(msg []byte) (*TcpMsg, error) {
 }
 func HandlerConn(conn net.Conn, ip string) {
 	tcpClient := wrapConc(conn, ip)
-	unbindClients.Set(ip, tcpClient)
+	TcpManagerInst.unbindClients.Set(ip, tcpClient)
 	ants.Submit(tcpClient.run)
 }
 func wrapConc(conn net.Conn, ip string) *TcpClient {
@@ -54,10 +55,10 @@ func MainEntrance(conn net.Conn, ip string) {
 }
 
 func SendMsg(appId string, taskId int, uid string, msg []byte) error {
-	logging.Debug("bind clients contains keys (%s)", bindClients.Keys())
-	if v, ok := bindClients.Get(appId); ok {
+	a, _ := TcpManagerInst.bindClients.Get(appId)
+	logging.Debug("appId %s bind tcp clients contains keys (%s)", a.(util.ConcMap).Keys())
+	if c, ok := TcpManagerInst.GetTcpClient(appId); ok {
 		//if _, ok := bindClients.Get(appId); !ok {
-		c := v.(*TcpClient)
 		msg = bytes.Trim(msg, "\"")
 		tcpMsg := &TcpMsg{
 			Body: make(map[string]interface{}),

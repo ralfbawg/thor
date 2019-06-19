@@ -25,7 +25,7 @@ var (
 	tcpCPool, _                = ants.NewPool(tcpCPoolDefaultSize)
 	newline                    = []byte{'\n'}
 	space                      = []byte{' '}
-	bindClients, unbindClients = util.NewConcMap(), util.NewConcMap()
+
 	singalByte                 = make([]byte, 1)[0]
 )
 
