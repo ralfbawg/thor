@@ -20,13 +20,13 @@ const (
 )
 
 var (
-	tcpCPoolExtendFactor       = 0.8
-	tcpCPoolDefaultSize        = 10000
-	tcpCPool, _                = ants.NewPool(tcpCPoolDefaultSize)
-	newline                    = []byte{'\n'}
-	space                      = []byte{' '}
+	tcpCPoolExtendFactor = 0.8
+	tcpCPoolDefaultSize  = 10000
+	tcpCPool, _          = ants.NewPool(tcpCPoolDefaultSize)
+	newline              = []byte{'\n'}
+	space                = []byte{' '}
 
-	singalByte                 = make([]byte, 1)[0]
+	singalByte = make([]byte, 1)[0]
 )
 
 const (
@@ -89,7 +89,7 @@ func (c *TcpClient) Read() {
 			bytes.NewBuffer(b).Reset()
 			bytePool.Put(b)
 		} else if err == io.EOF {
-			logging.Error("got %v; want %v", err, io.EOF)
+			logging.Error("got %v ", err)
 			c.close()
 			break
 		} else {
@@ -156,6 +156,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 }
 func (c *TcpClient) close() {
 	TcpManagerInst.WsListenerUnregister(c.appId, c.ip)
+	TcpManagerInst.close <- c
 	c.conn.Close()
 }
 func (c *TcpClient) sendMsg(msg []byte) {

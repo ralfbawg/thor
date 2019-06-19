@@ -27,6 +27,7 @@ func TcpManagerInit() *TcpManager {
 	m := &TcpManager{
 		bind:          make(chan *TcpClient, 10),
 		unbind:        make(chan *TcpClient, 10),
+		close:         make(chan *TcpClient, 10),
 		bindClients:   util.NewConcMap(),
 		unbindClients: util.NewConcMap(),
 	}
