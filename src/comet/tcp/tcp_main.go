@@ -55,8 +55,11 @@ func MainEntrance(conn net.Conn, ip string) {
 }
 
 func SendMsg(appId string, taskId int, uid string, msg []byte) error {
-	a, _ := TcpManagerInst.bindClients.Get(appId)
-	logging.Debug("appId %s bind tcp clients contains keys (%s)", a.(util.ConcMap).Keys())
+	a, exist := TcpManagerInst.bindClients.Get(appId);
+	if !exist {
+		return errors.New("there is no biz sub this app("+appId+")")
+	}
+	logging.Debug("appId %s bind tcp clients contains keys (%s)", appId, a.(util.ConcMap).Keys())
 	if c, ok := TcpManagerInst.GetTcpClient(appId); ok {
 		//if _, ok := bindClients.Get(appId); !ok {
 		msg = bytes.Trim(msg, "\"")
@@ -70,7 +73,7 @@ func SendMsg(appId string, taskId int, uid string, msg []byte) error {
 		resultB, err := json.Marshal(tcpMsg)
 		if err == nil {
 			c.send <- resultB
-			logging.Debug("send to tcp client msg(%s)", resultB)
+			logging.Debug("send to tcp client(%s) msg(%s)", c.ip, resultB)
 		} else {
 			return errors.New("json解析出错，确定你的json没问题?")
 		}

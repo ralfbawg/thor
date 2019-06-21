@@ -3,7 +3,6 @@ package tcp
 import (
 	"github.com/panjf2000/ants"
 	"util"
-	"math/rand"
 	"time"
 )
 
@@ -37,8 +36,10 @@ func TcpManagerInit() *TcpManager {
 func (tcpManager *TcpManager) GetTcpClient(appId string) (*TcpClient, bool) {
 	if tmp, ok := tcpManager.bindClients.Get(appId); ok {
 		tmpKeys := tmp.(util.ConcMap).Keys()
-		rand.Seed(time.Now().Unix())
-		a, okB := tmp.(util.ConcMap).Get(tmpKeys[rand.Intn(len(tmpKeys)-1)]);
+		tmpKey := util.AOrB(func() bool {
+			return len(tmpKeys) > 1
+		}, tmpKeys[int(time.Now().Unix())%len(tmpKeys)], tmpKeys[0]).(string)
+		a, okB := tmp.(util.ConcMap).Get(tmpKey)
 		if okB {
 			return a.(*TcpClient), true
 		} else {

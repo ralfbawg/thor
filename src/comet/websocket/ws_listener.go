@@ -70,6 +70,10 @@ type WsEvent struct {
 	param []interface{}
 }
 
+var WsEventPool = sync.Pool{New: func() interface{} {
+	return &WsEvent{}
+}}
+
 func NewWsListener(c context.Context, appId string) *WsListener {
 	context, _ := context.WithCancel(c)
 	return &WsListener{
@@ -79,13 +83,17 @@ func NewWsListener(c context.Context, appId string) *WsListener {
 		eventFunctions: util.NewConcMap(),
 	}
 }
-func (l *WsListeners) TriggerEvent(appId string, uid string, event int, ext ...interface{}) {
+func (l *WsListeners) TriggerEvent(appId string, uid string, event int, param ...interface{}) {
 	if tmp, ok := l.Get(appId); ok {
-		event := &WsEvent{event: event, uid: uid, param: ext,}
+		poolEvent := WsEventPool.Get().(*WsEvent)
+		defer WsEventPool.Put(poolEvent)
+		poolEvent.event = event
+		poolEvent.uid = uid
+		poolEvent.param = param
 		listener := tmp.(*WsListener)
-		listener.eventChan <- event
+		listener.eventChan <- poolEvent
 	} else {
-		logging.Debug("appId %s is not exist", appId)
+		logging.Debug("none biz sub appId(%s)'s ws event,skip", appId)
 	}
 
 }
