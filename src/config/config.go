@@ -31,6 +31,14 @@ type Configure struct {
 		DbType   string `yaml:"dbtype"`
 		DbName   string `yaml:"dbname"`
 	}
+	Ws struct {
+		App struct {
+			AppId     string `yaml:"appId"`
+			AppKey    string `yaml:"appKey"`
+			AppSecret string `yaml:"appSecret"`
+			Crypto    string `yaml:"crypto"`
+		}
+	}
 	inited bool
 }
 

@@ -62,6 +62,6 @@ func (app *WsApp) GetAppId() string {
 
 func (app *WsApp) processMsg(taskId int, uid string, msg []byte) {
 	if err := rpc.RpcClient.SendMsg(app.appId, taskId, uid, msg); err != nil {
-		app.Tasks[taskId].GetClient(uid).Send([]byte(err.Error()))
+		//app.Tasks[taskId].GetClient(uid).Send([]byte(err.Error()))
 	}
 }

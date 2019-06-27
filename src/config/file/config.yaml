@@ -4,7 +4,7 @@ app:
 common:
   env: dev
 log:
-  filepath: d:/test
+  filepath: d://thor.log
   level: debug
 server:
   port: 10001
@@ -25,4 +25,9 @@ db:
 #  password: thor
   password: duowan
   dbtype: mysql
-
+ws:
+  app:
+    appId: onetalk
+    appKey: ba4338dde1dd4601a848f2adeeeb510c
+    appSecret: ffc4312164fe038877ad476e453bf74e96a2de8e
+    crypto: sha1

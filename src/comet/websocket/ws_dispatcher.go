@@ -191,7 +191,7 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 	//filter.DoFilter(w, r)
 	param := r.URL.Query()
 	//logging.Debug(param.Get("appId"))
-	if appId, taskId, uid, exist := task.VerifyAppInfo(param); exist == true {
+	if appId, taskId, uid, exist, error := task.VerifyAppInfo(param); exist == true {
 		if conn, err := upgrade.Upgrade(w, r, nil); err != nil {
 			logging.Error("哦活,error:%s", err)
 		} else {
@@ -201,7 +201,8 @@ func WsDispatcher(w http.ResponseWriter, r *http.Request) {
 
 		}
 	} else {
-		w.Write([]byte("appId 错误或者不存在"))
+		logging.Debug("ws ip(%s)连接错误,签名不过,错误信息(%s)", r.RemoteAddr, error.Error())
+		w.Write([]byte("连接错误,签名不过,错误信息(" + error.Error() + ")"))
 	}
 
 }

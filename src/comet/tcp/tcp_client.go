@@ -7,7 +7,6 @@ import (
 	"common/logging"
 	"io"
 	"encoding/json"
-	"task"
 	"sync"
 	"time"
 )
@@ -25,8 +24,7 @@ var (
 	tcpCPool, _          = ants.NewPool(tcpCPoolDefaultSize)
 	newline              = []byte{'\n'}
 	space                = []byte{' '}
-
-	singalByte = make([]byte, 1)[0]
+	singalByte           = make([]byte, 1)[0]
 )
 
 const (
@@ -55,6 +53,35 @@ var largeBytePool = &sync.Pool{
 
 func (c *TcpClient) run() {
 	util.SubmitTaskAndResize(tcpCPool, tcpCPoolDefaultSize, tcpCPoolExtendFactor, c.Write, c.Read)
+	var resultB = []byte{}
+	for {
+		select {
+		case msg := <-c.read:
+			exist := bytes.Contains(msg, newline)
+			logging.Debug("get tcp chan msg %s contain LR (%v)", msg, exist)
+			if exist {
+				lastIndex := bytes.LastIndex(msg, newline)
+				resultB = append(resultB, msg[:lastIndex]...)
+				for _, v := range bytes.Split(resultB, newline) {
+					if len(v) > 0 {
+						c.trimAndProcessMsg(v)
+					}
+				}
+				if lastIndex+1 != len(msg) {
+					errClone := util.Clone(msg[lastIndex+1:], &resultB)
+					if errClone != nil {
+						logging.Debug("%v clone error happen", errClone)
+					}
+				} else {
+					resultB = []byte{}
+				}
+
+			} else {
+				resultB = append(resultB, msg...)
+			}
+		}
+	}
+
 }
 
 func (c *TcpClient) Write() {
@@ -70,57 +97,33 @@ func (c *TcpClient) Write() {
 	}
 }
 func (c *TcpClient) Read() {
-	resultB := []byte{}
 	for {
-		//b := make([]byte, 256)
-		var n int
-		var err error
-		b := smallBytePool.Get().([]byte)
-		for {
-			n, err = c.conn.Read(b)
-			if err != nil || n == 0 {
-				logging.Debug("read error,ip(%s) time (%s)", c.ip, time.Now())
-				break
-			}
-			if sepIndex := bytes.Index(b, newline); sepIndex != -1 {
-				if resultB == nil {
-					resultB = b[0:sepIndex]
-				} else {
-					resultB = append(resultB, b[0:sepIndex]...)
-				}
-				b = b[sepIndex:]
-			}
-			if n < cap(b) {
-				if resultB == nil {
-					resultB = b
-				} else {
-					resultB = append(resultB, b[0:n]...)
-				}
+		b := make([]byte, BYTE_SIZE_SMALL)
+		logging.Debug("buffer get by pool length is(%d),content is  (%s)", len(b), string(b))
+		//b := smallBytePool.Get().([]byte)
+		n, err := c.conn.Read(b)
+		if err != nil {
+			logging.Debug("tcp ip(%s) read error", c.ip)
+			if err == io.EOF {
+				logging.Error("got %v,tcp(%s) close ", err, c.ip)
+				c.close()
 				break
 			} else {
-				if resultB == nil {
-					resultB = b
-				} else {
-					resultB = append(resultB, b...)
-				}
+				logging.Error("got %v; want %v", err, io.EOF)
+				c.close()
+				break
 			}
 		}
-		bytes.NewBuffer(b).Reset()
+		c.read <- b[:n]
+		logging.Debug("buffer read count is(%d) and length is(%d),content is  (%s)", n, len(b), string(b))
+		buffer:=bytes.NewBuffer(b)
+		buffer.Reset()
+		logging.Debug("buffer after reset get by pool length is(%d),content is  (%s)", len(b), string(b))
+		buffer.Bytes()
 		smallBytePool.Put(b)
-		if n != 0 {
-			c.trimAndProcessMsg(resultB)
-		} else if err == io.EOF {
-			logging.Error("got %v ", err)
-			c.close()
-			break
-		} else {
-			logging.Error("got %v; want %v", err, io.EOF)
-			c.close()
-			break
-		}
 
+		//logging.Debug("(%s) contain LR(%v)", b, bytes.Contains(b, newline))
 	}
-
 }
 func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 	reqMsg := &TcpMsg{}
@@ -131,7 +134,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 		//0:订阅 1:广播 2:单播 110:断掉客户端长连接 100心跳 101回应
 		case TCP_MSG_TYPE_SUB:
 			if reqMsg.Header.AppId != "" && reqMsg.Header.AppKey != "" {
-				task.VerifyAppInfo2(reqMsg.Header.AppId, reqMsg.Header.TaskId, reqMsg.Header.Uid, reqMsg.Header.AppKey)
+				//task.VerifyAppInfo2(reqMsg.Header.AppId, reqMsg.Header.TaskId, reqMsg.Header.Uid, reqMsg.Header.AppKey)
 				c.appId = reqMsg.Header.AppId
 				c.taskId = reqMsg.Header.TaskId
 				c.uid = reqMsg.Header.Uid
@@ -164,6 +167,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 		}
 	} else {
 		logging.Error("[ProcessTcpMsg] Failed, %s,", err.Error())
+		return nil, err
 	}
 
 	backMsg, err := json.Marshal(reqMsg)
@@ -186,30 +190,9 @@ func (c *TcpClient) sendMsg(msg []byte) {
 func (c *TcpClient) closeWs(uid string) {
 	TcpManagerInst.WsCloseHandler(c.appId, 0, uid)
 }
-func (c *TcpClient) trimAndProcessMsg(msg []byte) {
+func (c *TcpClient) trimAndProcessMsg(msg []byte) error {
 	msg = bytes.TrimSpace(msg)
-	//var bs [][]byte
-	////var bs  = [][]byte{b}
-	//if bytes.Contains(b, newline) {
-	//	bs = bytes.Split(b, newline)
-	//} else {
-	//	bs = [][]byte{b}
-	//}
-	//
-	//for _, v := range bs {
-	//	validN := bytes.IndexByte(v, singalByte)
-	//	b = func() []byte {
-	//		if validN < 0 {
-	//			return v[0:]
-	//		} else {
-	//			return v[0:validN]
-	//		}
-	//	}()
-	//
-	//	logging.Info("get tcp message %s from %s", string(b), c.ip)
-	//	c.ProcessTcpMsg(b)
-	//}
 	logging.Debug("get tcp message %s from %s", string(msg), c.ip)
-	c.ProcessTcpMsg(msg)
-	msg = msg[:0]
+	_, err := c.ProcessTcpMsg(msg)
+	return err
 }

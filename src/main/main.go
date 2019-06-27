@@ -5,13 +5,13 @@ import (
 	"sync"
 	"encoding/json"
 	"common/logging"
+	"os"
+	"os/signal"
+	"syscall"
 	"config"
 	"manager"
 	"github.com/panjf2000/ants"
 	"statistics"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 var tmpMap sync.Map
@@ -21,6 +21,8 @@ func main() {
 	logging.Debug("server start")
 	manager.StartServers()
 	ants.Submit(statistics.PrintStatistics)
+	//a, _ := api.GernateAppInfo("onetalk")
+	//api.VerifyAppInfo(config.ConfigStore.Ws.App.AppId,"8a6794f01609ffe683fa8a6dbd15af6c7bb76da4",1561365008000,1,"ffc4312164fe038877ad476e453bf74e96a2de8e")
 	//game.GameMallInst.Init()
 	ChanShutdown := make(chan os.Signal)
 	signal.Ignore(syscall.SIGHUP)

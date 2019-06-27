@@ -55,7 +55,7 @@ func MainEntrance(conn net.Conn, ip string) {
 }
 
 func SendMsg(appId string, taskId int, uid string, msg []byte) error {
-	a, exist := TcpManagerInst.bindClients.Get(appId);
+	a, exist := TcpManagerInst.bindClients.Get(appId)
 	if !exist {
 		return errors.New("there is no biz sub this app("+appId+")")
 	}
