@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"util"
+	"sync"
 )
 
 const (
@@ -19,6 +20,10 @@ const (
 	TCP_MSG_TYPE_PING      = 100
 	TCP_MSG_TYPE_PONG      = 101
 	TCP_MSG_TYPE_CLOSE     = 110
+
+	BYTE_SIZE_SMALL  = 1024 * 1
+	BYTE_SIZE_MEDIUM = 1024 * 32
+	BYTE_SIZE_LARGE  = 1024 * 128
 )
 
 func UnmarshalMsg(msg []byte) (*TcpMsg, error) {
@@ -47,6 +52,11 @@ func wrapConc(conn net.Conn, ip string) *TcpClient {
 		c: TcpClientContext{
 			context.TODO(),
 		},
+		bytesPool: &sync.Pool{
+			New: func() interface{} {
+				return make([]byte, BYTE_SIZE_SMALL)
+			},
+		},
 	}
 }
 
@@ -57,7 +67,7 @@ func MainEntrance(conn net.Conn, ip string) {
 func SendMsg(appId string, taskId int, uid string, msg []byte) error {
 	a, exist := TcpManagerInst.bindClients.Get(appId)
 	if !exist {
-		return errors.New("there is no biz sub this app("+appId+")")
+		return errors.New("there is no biz sub this app(" + appId + ")")
 	}
 	logging.Debug("appId %s bind tcp clients contains keys (%s)", appId, a.(util.ConcMap).Keys())
 	if c, ok := TcpManagerInst.GetTcpClient(appId); ok {

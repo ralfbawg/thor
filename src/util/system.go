@@ -6,6 +6,7 @@ import (
 	"runtime/pprof"
 	"bytes"
 	"encoding/gob"
+	"encoding/binary"
 )
 
 func GetMemoryFile() {
@@ -52,4 +53,9 @@ func Clone(a, b interface{}) error {
 		return err
 	}
 	return nil
+}
+func Int64ToBytes(i int64) []byte {
+	var buf = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, uint64(i))
+	return buf
 }

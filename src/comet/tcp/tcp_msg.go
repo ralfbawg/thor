@@ -3,6 +3,7 @@ package tcp
 import (
 	"net"
 	"context"
+	"sync"
 )
 
 type TcpMsg struct {
@@ -31,6 +32,7 @@ type TcpClient struct {
 	send        chan []byte
 	read        chan []byte
 	c           TcpClientContext
+	bytesPool   *sync.Pool
 }
 
 type TcpClientContext struct {

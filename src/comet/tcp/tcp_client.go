@@ -9,6 +9,8 @@ import (
 	"encoding/json"
 	"sync"
 	"time"
+	"regexp"
+	"strconv"
 )
 
 const (
@@ -28,11 +30,8 @@ var (
 )
 
 const (
-	READ_TIME_OUT    = 60 * time.Second
-	WRITE_TIME_OUT   = 60 * time.Second
-	BYTE_SIZE_SMALL  = 1024 * 1
-	BYTE_SIZE_MEDIUM = 1024 * 32
-	BYTE_SIZE_LARGE  = 1024 * 128
+	READ_TIME_OUT  = 60 * time.Second
+	WRITE_TIME_OUT = 60 * time.Second
 )
 
 var smallBytePool = &sync.Pool{
@@ -57,13 +56,14 @@ func (c *TcpClient) run() {
 	for {
 		select {
 		case msg := <-c.read:
+			regexSetRequestId(msg)
 			exist := bytes.Contains(msg, newline)
 			logging.Debug("get tcp chan msg %s contain LR (%v)", msg, exist)
 			if exist {
 				lastIndex := bytes.LastIndex(msg, newline)
 				resultB = append(resultB, msg[:lastIndex]...)
 				for _, v := range bytes.Split(resultB, newline) {
-					if len(v) > 0 {
+					if len(v) > 1 {
 						c.trimAndProcessMsg(v)
 					}
 				}
@@ -98,9 +98,9 @@ func (c *TcpClient) Write() {
 }
 func (c *TcpClient) Read() {
 	for {
-		b := make([]byte, BYTE_SIZE_SMALL)
+		//b := make([]byte, BYTE_SIZE_SMALL)
+		b := c.bytesPool.Get().([]byte)
 		logging.Debug("buffer get by pool length is(%d),content is  (%s)", len(b), string(b))
-		//b := smallBytePool.Get().([]byte)
 		n, err := c.conn.Read(b)
 		if err != nil {
 			logging.Debug("tcp ip(%s) read error", c.ip)
@@ -113,15 +113,12 @@ func (c *TcpClient) Read() {
 				c.close()
 				break
 			}
+		} else if n != 0 {
+			c.read <- b[:n]
 		}
-		c.read <- b[:n]
-		logging.Debug("buffer read count is(%d) and length is(%d),content is  (%s)", n, len(b), string(b))
-		buffer:=bytes.NewBuffer(b)
-		buffer.Reset()
 		logging.Debug("buffer after reset get by pool length is(%d),content is  (%s)", len(b), string(b))
-		buffer.Bytes()
-		smallBytePool.Put(b)
-
+		bytes.NewBuffer(b).Reset()
+		c.bytesPool.Put(b)
 		//logging.Debug("(%s) contain LR(%v)", b, bytes.Contains(b, newline))
 	}
 }
@@ -166,7 +163,7 @@ func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {
 			c.closeWs(reqMsg.Header.Uid)
 		}
 	} else {
-		logging.Error("[ProcessTcpMsg] Failed, %s,", err.Error())
+		logging.Error("[ProcessTcpMsg] process msg (%s) Failed, %s,", string(msg), err.Error())
 		return nil, err
 	}
 
@@ -195,4 +192,13 @@ func (c *TcpClient) trimAndProcessMsg(msg []byte) error {
 	logging.Debug("get tcp message %s from %s", string(msg), c.ip)
 	_, err := c.ProcessTcpMsg(msg)
 	return err
+}
+func regexSetRequestId(msg []byte) {
+	pat := `\"requestId\":\"\d{15}\"`
+	if ok, _ := regexp.Match(pat, msg); ok {
+		re, _ := regexp.Compile(pat)
+		now := time.Now().UnixNano()
+		nowStr := strconv.FormatInt(now, 10)
+		msg = re.ReplaceAll(msg, []byte("\"requestId\":\""+nowStr+"\""))
+	}
 }
