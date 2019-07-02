@@ -34,6 +34,12 @@ const (
 	WRITE_TIME_OUT = 60 * time.Second
 )
 
+var smallBufferPool = &sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer(make([]byte, BYTE_SIZE_SMALL))
+	},
+}
+
 var smallBytePool = &sync.Pool{
 	New: func() interface{} {
 		return make([]byte, BYTE_SIZE_SMALL)
@@ -79,6 +85,7 @@ func (c *TcpClient) run() {
 			} else {
 				resultB = append(resultB, msg...)
 			}
+			smallBytePool.Put(msg)
 		}
 	}
 
@@ -98,8 +105,8 @@ func (c *TcpClient) Write() {
 }
 func (c *TcpClient) Read() {
 	for {
+		b := smallBytePool.Get().([]byte)
 		//b := make([]byte, BYTE_SIZE_SMALL)
-		b := c.bytesPool.Get().([]byte)
 		logging.Debug("buffer get by pool length is(%d),content is  (%s)", len(b), string(b))
 		n, err := c.conn.Read(b)
 		if err != nil {
@@ -115,11 +122,8 @@ func (c *TcpClient) Read() {
 			}
 		} else if n != 0 {
 			c.read <- b[:n]
+			logging.Debug("buffer after reset get by pool length is(%d),content is  (%s)", len(b), string(b))
 		}
-		logging.Debug("buffer after reset get by pool length is(%d),content is  (%s)", len(b), string(b))
-		bytes.NewBuffer(b).Reset()
-		c.bytesPool.Put(b)
-		//logging.Debug("(%s) contain LR(%v)", b, bytes.Contains(b, newline))
 	}
 }
 func (c *TcpClient) ProcessTcpMsg(msg []byte) ([]byte, error) {

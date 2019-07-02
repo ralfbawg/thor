@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"errors"
 	"util"
-	"sync"
 )
 
 const (
@@ -52,11 +51,11 @@ func wrapConc(conn net.Conn, ip string) *TcpClient {
 		c: TcpClientContext{
 			context.TODO(),
 		},
-		bytesPool: &sync.Pool{
-			New: func() interface{} {
-				return make([]byte, BYTE_SIZE_SMALL)
-			},
-		},
+		//bytesPool: &sync.Pool{
+		//	New: func() interface{} {
+		//		return make([]byte, BYTE_SIZE_SMALL)
+		//	},
+		//},
 	}
 }
 
