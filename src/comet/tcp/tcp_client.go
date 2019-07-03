@@ -34,15 +34,14 @@ const (
 	WRITE_TIME_OUT = 60 * time.Second
 )
 
-var smallBufferPool = &sync.Pool{
-	New: func() interface{} {
-		return bytes.NewBuffer(make([]byte, BYTE_SIZE_SMALL))
-	},
-}
-
 var smallBytePool = &sync.Pool{
 	New: func() interface{} {
 		return make([]byte, BYTE_SIZE_SMALL)
+	},
+}
+var countBytePool = &sync.Pool{
+	New: func() interface{} {
+		return make([]byte, BYTE_SIZE_COUNT)
 	},
 }
 var mediumBytePool = &sync.Pool{
@@ -62,7 +61,11 @@ func (c *TcpClient) run() {
 	for {
 		select {
 		case msg := <-c.read:
-			regexSetRequestId(msg)
+			//countByte := msg[:4]
+			//count := int32(binary.BigEndian.Uint32(countByte))
+			//logging.Debug("length is %d", count)
+			//msg = msg[4 : count+4]
+			//regexSetRequestId(msg)
 			exist := bytes.Contains(msg, newline)
 			logging.Debug("get tcp chan msg %s contain LR (%v)", msg, exist)
 			if exist {
@@ -85,7 +88,9 @@ func (c *TcpClient) run() {
 			} else {
 				resultB = append(resultB, msg...)
 			}
-			smallBytePool.Put(msg)
+			if len(msg) >= BYTE_SIZE_SMALL {
+				smallBytePool.Put(msg)
+			}
 		}
 	}
 
@@ -121,6 +126,9 @@ func (c *TcpClient) Read() {
 				break
 			}
 		} else if n != 0 {
+			//countByte := countBytePool.Get().([]byte)
+			//binary.BigEndian.PutUint32(countByte, uint32(n))
+			//result := append(countByte, b...)
 			c.read <- b[:n]
 			logging.Debug("buffer after reset get by pool length is(%d),content is  (%s)", len(b), string(b))
 		}
