@@ -16,14 +16,16 @@ import (
 )
 
 const (
-	appIdParam     = "appId"
-	taskIdParam    = "taskId"
-	appKeyParam    = "appKey"
-	appSecretParam = "appSecret"
-	randonParam    = "random"
-	timestampParam = "timestamp"
-	signParam      = "sign"
-	uidParam       = "uid"
+	appIdParam      = "appId"
+	taskIdParam     = "taskId"
+	appKeyParam     = "appKey"
+	appSecretParam  = "appSecret"
+	randonParam     = "random"
+	timestampParam  = "timestamp"
+	signParam       = "sign"
+	uidParam        = "uid"
+	verifyVersion_1 = iota
+	verifyVersion_2
 )
 
 const (
@@ -41,7 +43,11 @@ func VerifyAppInfo(param url.Values) (string, int, string, bool, error) {
 	if err != nil {
 		return "", 0, "", false, err
 	}
-	//appSecret := param.Get(appSecretParam)
+	versionVerify := verifyVersion_2
+	appSecret := param.Get(appSecretParam)
+	if appSecret != "" {
+		versionVerify = verifyVersion_1
+	}
 	random := param.Get(randonParam)
 	timestamp := param.Get(timestampParam)
 	sign := param.Get(signParam)
@@ -55,15 +61,15 @@ func VerifyAppInfo(param url.Values) (string, int, string, bool, error) {
 		uid = uuid.Generate().String()
 	}
 	logging.Debug("websocket connected,app(%s),appkey(%s),uid (%s)", appId, appInfo.AppKey, uid)
-	return VerifyAppInfo2(appId, taskId, uid, sign, random, timestamp, appInfo.AppSecret)
+	return VerifyAppInfo2(appId, versionVerify, taskId, uid, sign, random, timestamp, appInfo.AppSecret)
 }
 
 /*
  验证app信息
 */
-func VerifyAppInfo2(appId string, taskId int, uid string, sign string, random string, timestamp string, appSecret string) (string, int, string, bool, error) {
+func VerifyAppInfo2(appId string, verifyVersion int, taskId int, uid string, sign string, random string, timestamp string, appSecret string) (string, int, string, bool, error) {
 	//logging.Debug("app id is %s,app key is %s,uid is %s", appId, appKey, id)
-	error, ok := VerifyAppInfo3(appId, sign, timestamp, random, appSecret)
+	error, ok := VerifyAppInfo3(appId, sign, timestamp, random, appSecret, verifyVersion)
 	if ok && error == nil {
 		return appId, taskId, uid, true, error
 	} else {
@@ -119,7 +125,7 @@ func GernateAppInfo(appId string) (*AppInfo, error) {
 }
 
 //验证App信息
-func VerifyAppInfo3(appId string, sign string, timestamp string, random string, appSecret string) (error, bool) {
+func VerifyAppInfo3(appId string, sign string, timestamp string, random string, appSecret string, verifyVersion int) (error, bool) {
 	//return nil, true //TODO 测试用
 	timestampInt, covError1 := strconv.Atoi(timestamp)
 	randomInt, covError2 := strconv.Atoi(random)
@@ -130,14 +136,14 @@ func VerifyAppInfo3(appId string, sign string, timestamp string, random string, 
 	now := time.Now().Unix() * 1000
 	if now-int64(timestampInt) > defaultTimestampWinTime || now-int64(timestampInt) < -defaultTimestampWinTime {
 		return errors.New("timestamp is unllegal"), false
-	} else if CheckSign(&AppInfo{AppId: appId, AppKey: appId, AppSecret: appSecret}, sign, randomInt, int64(timestampInt)) {
+	} else if CheckSign(&AppInfo{AppId: appId, AppKey: appId, AppSecret: appSecret}, sign, randomInt, int64(timestampInt), verifyVersion) {
 		return nil, true
 	} else {
 		return errors.New("sign is unllegal"), false
 	}
 }
 
-func CheckSign(app *AppInfo, sign string, random int, timestamp int64) bool {
+func CheckSign(app *AppInfo, sign string, random int, timestamp int64, verifyVersion int) bool {
 	_sign, _ := Sign(app.AppKey, app.AppSecret, random, timestamp, getHashAlgorithm(app.cryptoAlgorithm))
 	logging.Debug("post sign=%s,calc sign=%s", sign, _sign)
 	if _sign == sign {
